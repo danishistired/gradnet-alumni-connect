@@ -1,16 +1,17 @@
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
-import { User, Plus, Home, Users } from "lucide-react";
+import { User, Plus, Home, Users, Mail } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
 interface NavbarProps {
   user?: {
-    type: 'student' | 'alumni';
+    type: 'student' | 'alumni' | 'admin';
     verified?: boolean;
   };
+  onMessagesClick?: () => void;
 }
 
-export const Navbar = ({ user }: NavbarProps) => {
+export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
   const location = useLocation();
   
   const isActive = (path: string) => location.pathname === path;
@@ -46,15 +47,36 @@ export const Navbar = ({ user }: NavbarProps) => {
             </div>
           )}
           
-          <div className="flex items-center gap-3">
+           <div className="flex items-center gap-3">
             {user && (
               <>
-                {user.verified !== false && (
+                {(user.type === 'student' || user.type === 'alumni') && onMessagesClick && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={onMessagesClick}
+                    className="relative"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
+                  </Button>
+                )}
+                
+                {user.verified !== false && user.type !== 'admin' && (
                   <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover">
                     <Plus className="w-4 h-4 mr-1" />
                     Post Blog
                   </Button>
                 )}
+                
+                {user.type === 'admin' && (
+                  <Link to="/admin">
+                    <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover">
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
+                
                 <Button variant="ghost" size="sm">
                   <User className="w-4 h-4" />
                 </Button>

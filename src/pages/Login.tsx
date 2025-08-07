@@ -17,7 +17,7 @@ export default function Login() {
 
   const handleContinue = () => {
     if (selectedType === 'student') {
-      navigate('/feed');
+      navigate('/skill-selection');
     } else if (selectedType === 'alumni') {
       navigate('/verify');
     }

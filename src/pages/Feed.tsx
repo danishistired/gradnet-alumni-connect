@@ -6,10 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowUp, ArrowDown, MessageCircle, Share2, TrendingUp, Users } from "lucide-react";
+import { ArrowUp, ArrowDown, MessageCircle, Share2, TrendingUp, Users, Mail } from "lucide-react";
+import { MessagesDialog } from "@/components/MessagesDialog";
 
 export default function Feed() {
   const [feedType, setFeedType] = useState("alumni");
+  const [messagesOpen, setMessagesOpen] = useState(false);
   const navigate = useNavigate();
 
   const mockAlumniPosts = [
@@ -115,7 +117,10 @@ export default function Feed() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={{ type: 'student', verified: true }} />
+      <Navbar 
+        user={{ type: 'student', verified: true }} 
+        onMessagesClick={() => setMessagesOpen(true)}
+      />
       
       <div className="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -324,6 +329,11 @@ export default function Feed() {
           </div>
         </div>
       </div>
+      
+      <MessagesDialog 
+        open={messagesOpen}
+        onOpenChange={setMessagesOpen}
+      />
     </div>
   );
 }
