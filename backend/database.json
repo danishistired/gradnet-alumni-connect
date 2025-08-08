@@ -10,6 +10,17 @@
       "university": "Chandigarh University",
       "graduationYear": "2028",
       "createdAt": "2025-08-08T09:56:49.619Z"
+    },
+    {
+      "id": "1754647227857",
+      "firstName": "Rahul",
+      "lastName": "Jaluthria ",
+      "email": "24BCY70054@cuchd.in",
+      "password": "$2a$10$86h0JnsM003/2AsxC7Q2/.T3obrmW2hboCWQvqxjqgcQOp9pfk0T6",
+      "accountType": "student",
+      "university": "Chandigarh University",
+      "graduationYear": "2028",
+      "createdAt": "2025-08-08T10:00:27.857Z"
     }
   ]
 }
