@@ -15,6 +15,7 @@ import BlogDetail from "./pages/BlogDetail";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute, GuestRoute, AuthenticatedRoute, StudentRoute, AlumniRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,17 +29,59 @@ const App = () => {
           <AuthProvider>
             <BrowserRouter>
               <Routes>
+                {/* Public routes - accessible to everyone */}
                 <Route path="/" element={<Index />} />
                 <Route path="/about" element={<About />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/skill-selection" element={<SkillSelection />} />
-                <Route path="/company-selection" element={<CompanySelection />} />
-                <Route path="/verify" element={<AlumniVerification />} />
-                <Route path="/feed" element={<Feed />} />
-                <Route path="/blog/:id" element={<BlogDetail />} />
-                <Route path="/admin" element={<AdminPanel />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                
+                {/* Guest-only routes - redirect authenticated users */}
+                <Route path="/login" element={
+                  <GuestRoute>
+                    <Login />
+                  </GuestRoute>
+                } />
+                <Route path="/register" element={
+                  <GuestRoute>
+                    <Register />
+                  </GuestRoute>
+                } />
+                
+                {/* Protected routes - require authentication */}
+                <Route path="/skill-selection" element={
+                  <AuthenticatedRoute>
+                    <SkillSelection />
+                  </AuthenticatedRoute>
+                } />
+                <Route path="/company-selection" element={
+                  <AuthenticatedRoute>
+                    <CompanySelection />
+                  </AuthenticatedRoute>
+                } />
+                <Route path="/feed" element={
+                  <AuthenticatedRoute>
+                    <Feed />
+                  </AuthenticatedRoute>
+                } />
+                <Route path="/blog/:id" element={
+                  <AuthenticatedRoute>
+                    <BlogDetail />
+                  </AuthenticatedRoute>
+                } />
+                
+                {/* Alumni-specific routes */}
+                <Route path="/verify" element={
+                  <AlumniRoute>
+                    <AlumniVerification />
+                  </AlumniRoute>
+                } />
+                
+                {/* Admin routes - require authentication (could be extended for admin-only) */}
+                <Route path="/admin" element={
+                  <AuthenticatedRoute>
+                    <AdminPanel />
+                  </AuthenticatedRoute>
+                } />
+                
+                {/* Catch-all route for 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

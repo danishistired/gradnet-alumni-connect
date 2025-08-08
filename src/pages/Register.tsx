@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,10 @@ export const Register = () => {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the page user was trying to access before registration
+  const from = location.state?.from?.pathname || '/skill-selection';
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -93,7 +97,8 @@ export const Register = () => {
       });
       
       if (result.success) {
-        navigate("/");
+        // Redirect to skill selection by default for new users
+        navigate(from, { replace: true });
       } else {
         setError(result.message);
       }

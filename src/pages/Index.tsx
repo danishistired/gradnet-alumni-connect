@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
@@ -9,6 +10,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,17 +41,39 @@ const Index = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
+            {user ? (
+              // Authenticated user - show dashboard button
+              <Button 
+                size="lg" 
+                className="btn-accent text-lg px-8 py-3"
+                onClick={() => navigate('/feed')}
+              >
+                Go to Dashboard <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            ) : (
+              // Guest user - show join/login buttons
+              <>
+                <Button 
+                  size="lg" 
+                  className="btn-accent text-lg px-8 py-3"
+                  onClick={() => navigate('/register')}
+                >
+                  Join GradNet
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="text-lg px-8 py-3 border-2 hover:bg-accent-light"
+                  onClick={() => navigate('/login')}
+                >
+                  Sign In
+                </Button>
+              </>
+            )}
             <Button 
+              variant="ghost" 
               size="lg" 
-              className="btn-accent text-lg px-8 py-3"
-              onClick={() => navigate('/login')}
-            >
-              Join GradNet
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-3 border-2 hover:bg-accent-light"
+              className="text-lg px-8 py-3"
               onClick={() => navigate('/about')}
             >
               Learn More

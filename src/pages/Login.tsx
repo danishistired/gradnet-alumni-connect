@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,10 @@ export const Login = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the page user was trying to access before login
+  const from = location.state?.from?.pathname || '/feed';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +51,8 @@ export const Login = () => {
       const result = await login(formData.email, formData.password, formData.accountType);
       
       if (result.success) {
-        navigate("/");
+        // Redirect to the page user was trying to access, or to feed by default
+        navigate(from, { replace: true });
       } else {
         setError(result.message);
       }
