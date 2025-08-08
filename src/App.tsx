@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import SkillSelection from "./pages/SkillSelection";
 import CompanySelection from "./pages/CompanySelection";
 import AlumniVerification from "./pages/AlumniVerification";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/skill-selection" element={<SkillSelection />} />
           <Route path="/company-selection" element={<CompanySelection />} />
           <Route path="/verify" element={<AlumniVerification />} />

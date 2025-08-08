@@ -242,7 +242,7 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
                     Login
                   </Button>
                 </Link>
-                <Link to="/login">
+                <Link to="/register">
                   <Button variant="default" className="bg-accent hover:bg-accent-hover">
                     Sign Up
                   </Button>
