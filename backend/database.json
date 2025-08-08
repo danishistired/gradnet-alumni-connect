@@ -1,0 +1,15 @@
+{
+  "users": [
+    {
+      "id": "1754647009619",
+      "firstName": "Danish",
+      "lastName": "Verma",
+      "email": "24BCY70069@cuchd.in",
+      "password": "$2a$10$7lvSCKZUb6jvlmX5znJrTOISgEopyGwDROzTRau12Ff14PPJyDA0W",
+      "accountType": "student",
+      "university": "Chandigarh University",
+      "graduationYear": "2028",
+      "createdAt": "2025-08-08T09:56:49.619Z"
+    }
+  ]
+}

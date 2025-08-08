@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/Logo";
+import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
+import { ArrowRight, Users, TrendingUp, Award, Globe } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import heroBg from "@/assets/hero-bg.jpg";
 
 
@@ -10,7 +12,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navbar */}
       <Navbar />
       
       {/* Hero Section */}

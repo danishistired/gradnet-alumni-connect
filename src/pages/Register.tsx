@@ -1,32 +1,34 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff, GraduationCap, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
-import { Eye, EyeOff, GraduationCap, Briefcase } from "lucide-react";
 
-const Register = () => {
-  const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+export const Register = () => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    accountType: "",
+    accountType: "student" as "student" | "alumni",
     university: "",
     graduationYear: "",
-    currentCompany: "",
     agreeToTerms: false
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
@@ -43,35 +45,63 @@ const Register = () => {
     return email.includes('@') && email.includes('.');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
+    setError("");
+
+    // Validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords do not match");
       return;
     }
-    
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
     if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions!");
+      setError("Please accept the terms and conditions");
       return;
     }
 
-    // Email validation based on account type
+    // Email validation
     if (!isValidEmail(formData.email, formData.accountType)) {
-      if (formData.accountType === 'student') {
-        alert("Students must use their @cuchd.in email address!");
-      } else {
-        alert("Please enter a valid email address!");
-      }
+      setError(
+        formData.accountType === "student" 
+          ? "Students must use their @cuchd.in email address"
+          : "Please enter a valid email address"
+      );
       return;
     }
 
-    // TODO: Implement actual registration logic
-    console.log("Registration data:", formData);
-    
-    // Navigate to skill selection or next step
-    navigate("/skill-selection");
+    setIsLoading(true);
+    try {
+      const result = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        accountType: formData.accountType,
+        university: formData.university,
+        graduationYear: formData.graduationYear
+      });
+      
+      if (result.success) {
+        navigate("/");
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError("Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -155,7 +185,7 @@ const Register = () => {
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="alumni" id="alumni" />
                       <Label htmlFor="alumni" className="flex items-center gap-2 cursor-pointer">
-                        <Briefcase className="w-4 h-4" />
+                        <User className="w-4 h-4" />
                         Alumni/Graduate
                       </Label>
                     </div>
@@ -180,40 +210,16 @@ const Register = () => {
                   <Label htmlFor="graduationYear">
                     {formData.accountType === "student" ? "Expected Graduation Year" : "Graduation Year"}
                   </Label>
-                  <Select onValueChange={(value) => handleInputChange("graduationYear", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 10 }, (_, i) => {
-                        const year = new Date().getFullYear() + i - 5;
-                        return (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="graduationYear"
+                    type="text"
+                    placeholder="2023"
+                    value={formData.graduationYear}
+                    onChange={(e) => handleInputChange("graduationYear", e.target.value)}
+                    required
+                  />
                 </div>
 
-                {/* Current Company (for alumni) */}
-                {formData.accountType === "alumni" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="currentCompany">Current Company (Optional)</Label>
-                    <Input
-                      id="currentCompany"
-                      type="text"
-                      placeholder="Tech Company Inc."
-                      value={formData.currentCompany}
-                      onChange={(e) => handleInputChange("currentCompany", e.target.value)}
-                    />
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Password Fields */}
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
@@ -268,7 +274,6 @@ const Register = () => {
                   </div>
                 </div>
 
-                {/* Terms and Conditions */}
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="terms"
@@ -287,26 +292,39 @@ const Register = () => {
                   </Label>
                 </div>
 
+                {error && (
+                  <p className="text-sm text-red-500 text-center">
+                    {error}
+                  </p>
+                )}
+
                 {/* Submit Button */}
                 <Button 
                   type="submit" 
                   className="w-full btn-accent"
-                  disabled={!formData.agreeToTerms}
+                  disabled={!formData.agreeToTerms || isLoading}
                 >
-                  Create Account
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
 
-              <Separator className="my-6" />
+              <div className="my-4 text-center">
+                <span className="text-sm text-text-secondary">or</span>
+              </div>
 
-              {/* Login Link */}
-              <div className="text-center">
-                <p className="text-sm text-text-secondary">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-accent hover:underline font-medium">
-                    Sign in here
-                  </Link>
-                </p>
+              {/* Google Sign-In Button (Optional) */}
+              <div className="flex justify-center">
+                {/* <Button variant="outline" className="w-full max-w-xs">
+                  <Google className="w-4 h-4 mr-2" />
+                  Sign up with Google
+                </Button> */}
+              </div>
+
+              <div className="my-4 text-center">
+                <span className="text-sm text-text-secondary">Already have an account?</span>
+                <Link to="/login" className="text-accent hover:underline font-medium">
+                  Sign in here
+                </Link>
               </div>
             </CardContent>
           </Card>

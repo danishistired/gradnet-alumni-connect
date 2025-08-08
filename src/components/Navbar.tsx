@@ -1,24 +1,21 @@
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { User, Plus, Home, Users, Mail, Bell, ShoppingCart, Menu, Settings, LogOut } from "lucide-react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavbarProps {
-  user?: {
-    type: 'student' | 'alumni' | 'admin';
-    verified?: boolean;
-    name?: string;
-    avatar?: string;
-  };
   onMessagesClick?: () => void;
 }
 
-export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
+export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isLoading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeIndicator, setActiveIndicator] = useState({ left: 0, width: 0 });
   const homeRef = useRef<HTMLAnchorElement>(null);
@@ -63,6 +60,11 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
     };
   }, [location.pathname]);
   
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 bg-surface border-b border-border z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,47 +192,37 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
                     <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage 
-                          src={user.avatar || "https://mdbcdn.b-cdn.net/img/new/avatars/2.webp"} 
-                          alt={user.name || "User avatar"} 
+                          src="https://mdbcdn.b-cdn.net/img/new/avatars/2.webp"
+                          alt={`${user.firstName} ${user.lastName}`}
                         />
                         <AvatarFallback>
-                          {user.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                          {user.firstName ? user.firstName.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="mr-2 h-4 w-4" />
-                      <span>My Profile</span>
+                      Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
+                      Settings
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
+                      Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Post Blog Button for verified users */}
-                {user.verified !== false && user.type !== 'admin' && (
-                  <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover hidden sm:flex">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Post Blog
-                  </Button>
-                )}
-                
-                {/* Admin Panel for admins */}
-                {user.type === 'admin' && (
-                  <Link to="/admin">
-                    <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover hidden sm:flex">
-                      Admin Panel
-                    </Button>
-                  </Link>
-                )}
+                {/* Post Blog Button */}
+                <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover hidden sm:flex">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Post Blog
+                </Button>
               </>
             )}
             
@@ -300,20 +292,10 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
                     Network
                   </Link>
                   
-                  {user.verified !== false && user.type !== 'admin' && (
-                    <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover justify-start">
-                      <Plus className="w-4 h-4 mr-1" />
-                      Post Blog
-                    </Button>
-                  )}
-                  
-                  {user.type === 'admin' && (
-                    <Link to="/admin" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover w-full justify-start">
-                        Admin Panel
-                      </Button>
-                    </Link>
-                  )}
+                  <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover justify-start">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Post Blog
+                  </Button>
                 </>
               )}
               
@@ -324,7 +306,7 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
                       Login
                     </Button>
                   </Link>
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="default" className="w-full justify-start bg-accent hover:bg-accent-hover">
                       Sign Up
                     </Button>

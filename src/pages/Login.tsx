@@ -1,25 +1,60 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Logo } from "@/components/Logo";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { GraduationCap, User } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Eye, EyeOff, GraduationCap, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "@/components/Logo";
 import heroBg from "@/assets/hero-bg.jpg";
 
-type UserType = 'student' | 'alumni' | null;
+export const Login = () => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    accountType: "student" as "student" | "alumni"
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-export default function Login() {
-  const [selectedType, setSelectedType] = useState<UserType>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleContinue = () => {
-    if (selectedType === 'student') {
-      navigate('/skill-selection');
-    } else if (selectedType === 'alumni') {
-      navigate('/verify');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    
+    if (!formData.email || !formData.password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    // Email validation
+    if (!isValidEmail(formData.email, formData.accountType)) {
+      setError(
+        formData.accountType === "student" 
+          ? "Students must use their @cuchd.in email address"
+          : "Please enter a valid email address"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await login(formData.email, formData.password, formData.accountType);
+      
+      if (result.success) {
+        navigate("/");
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,8 +65,6 @@ export default function Login() {
     // For alumni, any valid email format is allowed
     return email.includes('@') && email.includes('.');
   };
-
-  const showEmailError = selectedType === 'student' && email && !isValidEmail(email, selectedType);
 
   return (
     <div 
@@ -53,83 +86,94 @@ export default function Login() {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {!selectedType ? (
-            <div className="space-y-4">
-              <p className="text-center text-text-secondary text-sm">Choose your account type</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2 hover:border-accent hover:bg-accent-light"
-                  onClick={() => setSelectedType('student')}
-                >
-                  <GraduationCap className="w-6 h-6 text-accent" />
-                  <span className="font-medium">Student</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2 hover:border-accent hover:bg-accent-light"
-                  onClick={() => setSelectedType('alumni')}
-                >
-                  <User className="w-6 h-6 text-accent" />
-                  <span className="font-medium">Alumni</span>
-                </Button>
-              </div>
+          <div className="space-y-4">
+            <p className="text-center text-text-secondary text-sm">Choose your account type</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 hover:border-accent hover:bg-accent-light"
+                onClick={() => setFormData({ ...formData, accountType: 'student' })}
+              >
+                <GraduationCap className="w-6 h-6 text-accent" />
+                <span className="font-medium">Student</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col gap-2 hover:border-accent hover:bg-accent-light"
+                onClick={() => setFormData({ ...formData, accountType: 'alumni' })}
+              >
+                <User className="w-6 h-6 text-accent" />
+                <span className="font-medium">Alumni</span>
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-4 animate-slide-up">
-              <div className="text-center mb-4">
-                <h2 className="text-lg font-medium text-text-primary">
-                  Sign in as {selectedType === 'student' ? 'Student' : 'Alumni'}
-                </h2>
-                {selectedType === 'alumni' && (
-                  <p className="text-sm text-text-secondary mt-1">
-                    Use your personal email—university access is disabled after graduation
-                  </p>
+          </div>
+          
+          <div className="space-y-4 animate-slide-up">
+            <div className="text-center mb-4">
+              <h2 className="text-lg font-medium text-text-primary">
+                Sign in as {formData.accountType === 'student' ? 'Student' : 'Alumni'}
+              </h2>
+              {formData.accountType === 'alumni' && (
+                <p className="text-sm text-text-secondary mt-1">
+                  Use your personal email—university access is disabled after graduation
+                </p>
+              )}
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <Input
+                  type="email"
+                  placeholder={formData.accountType === 'student' ? 'your.name@cuchd.in' : 'your.email@gmail.com'}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={`input-field ${error && 'border-accent'}`}
+                />
+                {error && (
+                  <p className="text-sm text-accent mt-1">{error}</p>
                 )}
               </div>
               
-              <div className="space-y-3">
-                <div>
-                  <Input
-                    type="email"
-                    placeholder={selectedType === 'student' ? 'your.name@cuchd.in' : 'your.email@gmail.com'}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`input-field ${showEmailError ? 'border-accent' : ''}`}
-                  />
-                  {showEmailError && (
-                    <p className="text-sm text-accent mt-1">Students must use their @cuchd.in email address</p>
-                  )}
-                </div>
-                
+              <div className="relative">
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="input-field"
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5 text-text-secondary" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-text-secondary" />
+                  )}
+                </button>
               </div>
               
               <div className="space-y-3">
                 <Button 
                   className="w-full btn-accent" 
-                  onClick={handleContinue}
-                  disabled={!email || !password || showEmailError}
+                  type="submit"
+                  disabled={isLoading}
                 >
-                  Continue as {selectedType === 'student' ? 'Student' : 'Alumni'}
+                  {isLoading ? 'Signing in...' : `Continue as ${formData.accountType === 'student' ? 'Student' : 'Alumni'}`}
                 </Button>
                 
                 <Button 
                   variant="ghost" 
                   className="w-full text-text-secondary" 
-                  onClick={() => setSelectedType(null)}
+                  onClick={() => setFormData({ ...formData, accountType: formData.accountType === 'student' ? 'alumni' : 'student' })}
                 >
                   ← Back to account type
                 </Button>
               </div>
-            </div>
-          )}
+            </form>
+          </div>
           
           <div className="text-center pt-4 border-t border-border">
             <p className="text-sm text-text-muted">
