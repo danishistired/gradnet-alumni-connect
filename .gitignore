@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Backend
+backend/database.json
+backend/node_modules
+backend/package-lock.json        

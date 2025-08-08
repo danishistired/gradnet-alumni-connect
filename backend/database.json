@@ -21,6 +21,17 @@
       "university": "Chandigarh University",
       "graduationYear": "2028",
       "createdAt": "2025-08-08T10:00:27.857Z"
+    },
+    {
+      "id": "1754648939266",
+      "firstName": "Danish",
+      "lastName": "Verma",
+      "email": "iamdanishverma@gmail.com",
+      "password": "$2a$10$6aJolLRaEgMD7qVaUWSTpOeHvIKoaHF4mZ3C27zLzRlVRQRA3N21m",
+      "accountType": "alumni",
+      "university": "Chandigarh University",
+      "graduationYear": "2024",
+      "createdAt": "2025-08-08T10:28:59.266Z" 
     }
   ]
 }
