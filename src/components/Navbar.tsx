@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge";
 import { User, Plus, Home, Users, Mail, Bell, ShoppingCart, Menu, Settings, LogOut } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface NavbarProps {
   user?: {
@@ -20,8 +20,48 @@ interface NavbarProps {
 export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeIndicator, setActiveIndicator] = useState({ left: 0, width: 0 });
+  const homeRef = useRef<HTMLAnchorElement>(null);
+  const aboutRef = useRef<HTMLAnchorElement>(null);
+  const navContainerRef = useRef<HTMLDivElement>(null);
   
   const isActive = (path: string) => location.pathname === path;
+
+  // Update active indicator position
+  useEffect(() => {
+    const updateActiveIndicator = () => {
+      let activeRef = null;
+      
+      if (location.pathname === '/') {
+        activeRef = homeRef.current;
+      } else if (location.pathname === '/about') {
+        activeRef = aboutRef.current;
+      }
+      
+      if (activeRef && navContainerRef.current) {
+        const containerRect = navContainerRef.current.getBoundingClientRect();
+        const activeRect = activeRef.getBoundingClientRect();
+        
+        setActiveIndicator({
+          left: activeRect.left - containerRect.left,
+          width: activeRect.width
+        });
+      } else {
+        // Hide indicator if no active page
+        setActiveIndicator({ left: 0, width: 0 });
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(updateActiveIndicator, 50);
+    
+    // Update on window resize
+    window.addEventListener('resize', updateActiveIndicator);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateActiveIndicator);
+    };
+  }, [location.pathname]);
   
   return (
     <nav className="fixed top-0 left-0 right-0 bg-surface border-b border-border z-50">
@@ -43,20 +83,33 @@ export const Navbar = ({ user, onMessagesClick }: NavbarProps) => {
           </Button>
           
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div ref={navContainerRef} className="hidden md:flex items-center space-x-6 relative">
+            {/* Sliding Active Indicator */}
+            <div 
+              className="absolute top-2 bottom-2 bg-accent-light rounded-lg transition-all duration-300 ease-in-out z-0 shadow-sm"
+              style={{
+                left: `${activeIndicator.left}px`,
+                width: `${activeIndicator.width}px`,
+                opacity: (isActive('/') || isActive('/about')) ? 1 : 0,
+                transform: `translateZ(0)` // Force hardware acceleration
+              }}
+            />
+            
             <Link 
+              ref={homeRef}
               to="/" 
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive('/') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+              className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
               }`}
             >
               <Home className="w-4 h-4" />
               Home
             </Link>
             <Link 
+              ref={aboutRef}
               to="/about" 
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive('/about') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+              className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
               }`}
             >
               <Users className="w-4 h-4" />
