@@ -1,41 +1,21 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
-import { GraduationCap, Users, MessageCircle, TrendingUp } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 import heroBg from "@/assets/hero-bg.jpg";
+
 
 const Index = () => {
   const navigate = useNavigate();
 
-  const features = [
-    {
-      icon: GraduationCap,
-      title: "Alumni Expertise",
-      description: "Learn from graduates working at top companies worldwide"
-    },
-    {
-      icon: Users,
-      title: "Student Community",
-      description: "Connect with peers and build lasting professional relationships"
-    },
-    {
-      icon: MessageCircle,
-      title: "Knowledge Sharing",
-      description: "Share insights, ask questions, and grow together"
-    },
-    {
-      icon: TrendingUp,
-      title: "Career Growth",
-      description: "Get mentorship and advice for your professional journey"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background">
+      {/* Navbar */}
+      <Navbar />
+      
       {/* Hero Section */}
       <div 
-        className="relative min-h-screen flex items-center justify-center px-4 gradient-bg"
+        className="relative min-h-screen flex items-center justify-center px-4 gradient-bg pt-16"
         style={{
           backgroundImage: `url(${heroBg})`,
           backgroundSize: 'cover',
@@ -69,48 +49,36 @@ const Index = () => {
               variant="outline" 
               size="lg" 
               className="text-lg px-8 py-3 border-2 hover:bg-accent-light"
-              onClick={() => navigate('/feed')}
+              onClick={() => navigate('/about')}
             >
-              Explore Posts
+              Learn More
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-20 px-4">
+      {/* Quick Stats Section */}
+      <div className="py-16 px-4 bg-surface-muted">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4">
-              Why Choose GradNet?
-            </h2>
-            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-              Join thousands of students and alumni building meaningful professional connections
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, idx) => (
-              <Card key={idx} className="card-elevated text-center animate-fade-in">
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-accent-light rounded-full flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="w-8 h-8 text-accent" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-text-primary mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-text-secondary">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold text-accent mb-2">10,000+</div>
+              <div className="text-text-secondary">Active Members</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-accent mb-2">500+</div>
+              <div className="text-text-secondary">Companies</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-accent mb-2">50+</div>
+              <div className="text-text-secondary">Countries</div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="py-20 px-4 bg-surface-muted">
+      <div className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4">
             Ready to Start Your Journey?
