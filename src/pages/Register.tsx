@@ -35,6 +35,14 @@ const Register = () => {
     }));
   };
 
+  const isValidEmail = (email: string, accountType: string) => {
+    if (accountType === 'student') {
+      return email.endsWith('@cuchd.in');
+    }
+    // For alumni, any valid email format is allowed
+    return email.includes('@') && email.includes('.');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -46,6 +54,16 @@ const Register = () => {
     
     if (!formData.agreeToTerms) {
       alert("Please agree to the terms and conditions!");
+      return;
+    }
+
+    // Email validation based on account type
+    if (!isValidEmail(formData.email, formData.accountType)) {
+      if (formData.accountType === 'student') {
+        alert("Students must use their @cuchd.in email address!");
+      } else {
+        alert("Please enter a valid email address!");
+      }
       return;
     }
 
@@ -108,11 +126,15 @@ const Register = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="john.doe@university.edu"
+                    placeholder={formData.accountType === 'student' ? 'john.doe@cuchd.in' : 'john.doe@email.com'}
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
+                    className={`${formData.accountType === 'student' && formData.email && !isValidEmail(formData.email, formData.accountType) ? 'border-red-500' : ''}`}
                     required
                   />
+                  {formData.accountType === 'student' && formData.email && !isValidEmail(formData.email, formData.accountType) && (
+                    <p className="text-sm text-red-500 mt-1">Students must use their @cuchd.in email address</p>
+                  )}
                 </div>
 
                 {/* Account Type */}

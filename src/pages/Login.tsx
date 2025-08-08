@@ -23,11 +23,15 @@ export default function Login() {
     }
   };
 
-  const isUniversityEmail = (email: string) => {
-    return email.includes('.edu') || email.includes('@university') || email.includes('@college');
+  const isValidEmail = (email: string, accountType: string) => {
+    if (accountType === 'student') {
+      return email.endsWith('@cuchd.in');
+    }
+    // For alumni, any valid email format is allowed
+    return email.includes('@') && email.includes('.');
   };
 
-  const showEmailError = selectedType === 'student' && email && !isUniversityEmail(email);
+  const showEmailError = selectedType === 'student' && email && !isValidEmail(email, selectedType);
 
   return (
     <div 
@@ -88,13 +92,13 @@ export default function Login() {
                 <div>
                   <Input
                     type="email"
-                    placeholder={selectedType === 'student' ? 'your.name@university.edu' : 'your.email@gmail.com'}
+                    placeholder={selectedType === 'student' ? 'your.name@cuchd.in' : 'your.email@gmail.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={`input-field ${showEmailError ? 'border-accent' : ''}`}
                   />
                   {showEmailError && (
-                    <p className="text-sm text-accent mt-1">Please use your university email address</p>
+                    <p className="text-sm text-accent mt-1">Students must use their @cuchd.in email address</p>
                   )}
                 </div>
                 
