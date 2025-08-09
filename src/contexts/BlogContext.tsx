@@ -10,6 +10,20 @@ interface Author {
   profilePicture?: string;
 }
 
+interface Comment {
+  id: string;
+  postId: string;
+  authorId: string;
+  content: string;
+  parentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  likesCount: number;
+  author: Author;
+  timeAgo: string;
+  replies: Comment[];
+}
+
 interface BlogPost {
   id: string;
   authorId: string;
@@ -60,6 +74,11 @@ interface BlogContextType {
   deletePost: (postId: string) => Promise<{ success: boolean; message: string }>;
   setFilters: (filters: Partial<BlogFilters>) => void;
   refreshPosts: () => Promise<void>;
+  
+  // Comment actions
+  fetchComments: (postId: string) => Promise<Comment[]>;
+  addComment: (postId: string, content: string, parentId?: string) => Promise<{ success: boolean; message: string; comment?: Comment }>;
+  deleteComment: (commentId: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const BlogContext = createContext<BlogContextType | null>(null);
@@ -221,6 +240,90 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     await fetchPosts(1);
   };
 
+  // Comment functions
+  const fetchComments = async (postId: string): Promise<Comment[]> => {
+    if (!token) return [];
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          return data.comments;
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to fetch comments:', error);
+      return [];
+    }
+  };
+
+  const addComment = async (postId: string, content: string, parentId?: string) => {
+    if (!token) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content, parentId })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update post's comment count in local state
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, commentsCount: post.commentsCount + 1 }
+            : post
+        ));
+        return { success: true, message: data.message, comment: data.comment };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+      return { success: false, message: 'Failed to add comment' };
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!token) {
+      return { success: false, message: 'Not authenticated' };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        return { success: true, message: data.message };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      return { success: false, message: 'Failed to delete comment' };
+    }
+  };
+
   // Fetch posts when filters change or component mounts
   useEffect(() => {
     if (token) {
@@ -239,7 +342,10 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     likePost,
     deletePost,
     setFilters,
-    refreshPosts
+    refreshPosts,
+    fetchComments,
+    addComment,
+    deleteComment
   };
 
   return (

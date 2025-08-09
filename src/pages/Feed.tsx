@@ -2,16 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Heart, MessageCircle, Share2, BookmarkPlus, Search, TrendingUp, Users, GraduationCap, Briefcase, Star, Plus, Trash2 } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 
 const Feed = () => {
   const navigate = useNavigate();
@@ -63,11 +60,6 @@ const Feed = () => {
     if (window.confirm("Are you sure you want to delete this post?")) {
       await deletePost(postId);
     }
-  };
-
-  const truncateContent = (content: string, maxLength: number = 300) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + "...";
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -157,135 +149,125 @@ const Feed = () => {
           )}
 
           {/* Posts Feed */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             {filteredPosts.map((post) => (
-              <Card key={post.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
-                        {post.author.profilePicture ? (
-                          <AvatarImage src={post.author.profilePicture} />
-                        ) : null}
-                        <AvatarFallback className="bg-accent text-accent-foreground">
-                          {post.author.firstName.charAt(0)}{post.author.lastName.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-text-primary">
-                            {post.author.firstName} {post.author.lastName}
-                          </h3>
-                          <Badge variant={post.author.accountType === "alumni" ? "default" : "secondary"}>
-                            {post.author.accountType === "alumni" ? "Alumni" : "Student"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-text-secondary">
-                          {post.author.accountType === "alumni" 
-                            ? `Alumni • ${post.author.university}`
-                            : `Student • ${post.author.university}`
-                          }
-                        </p>
-                        <p className="text-xs text-text-secondary">{formatTimeAgo(post.createdAt)}</p>
-                      </div>
-                    </div>
+              <Card 
+                key={post.id} 
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => navigate(`/blog/${post.id}`)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
                     
-                    {/* Post Actions for Author */}
-                    {user && post.author.id === user.id && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(post.id)}
-                          className="text-text-secondary hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  {/* Post Title */}
-                  <h2 className="text-xl font-semibold text-text-primary mb-3">{post.title}</h2>
-                  
-                  {/* Post Content */}
-                  <div className="prose prose-sm max-w-none text-text-primary mb-4">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeHighlight]}
-                      components={{
-                        // Customize markdown rendering
-                        h1: ({children}) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-base font-bold mb-2">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
-                        p: ({children}) => <p className="mb-2 leading-relaxed">{children}</p>,
-                        code: ({children, className}) => {
-                          const isInline = !className;
-                          return isInline ? (
-                            <code className="bg-surface-muted px-1 py-0.5 rounded text-sm">{children}</code>
-                          ) : (
-                            <code className={className}>{children}</code>
-                          );
-                        },
-                        pre: ({children}) => (
-                          <pre className="bg-surface-muted p-3 rounded-lg text-sm overflow-x-auto">{children}</pre>
-                        ),
-                        a: ({children, href}) => (
-                          <a href={href} className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>
-                        ),
-                        ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                        ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                      }}
-                    >
-                      {truncateContent(post.content)}
-                    </ReactMarkdown>
-                  </div>
-                  
-                  {/* Category Badge */}
-                  <Badge variant="outline" className="mb-4">
-                    {post.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-                  
-                  {/* Tags */}
-                  {post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {post.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Engagement Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-6">
+                    {/* Vote/Like Section */}
+                    <div className="flex flex-col items-center gap-1 min-w-[50px]">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className={`flex items-center gap-2 text-text-secondary hover:text-red-500 ${
-                          user && post.isLiked ? 'text-red-500' : ''
+                        className={`p-1 hover:bg-surface-muted ${
+                          user && post.isLiked ? 'text-red-500' : 'text-text-secondary'
                         }`}
-                        onClick={() => user && handleLike(post.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          user && handleLike(post.id);
+                        }}
                         disabled={!user}
                       >
-                        <Heart className={`h-4 w-4 ${user && post.isLiked ? 'fill-current' : ''}`} />
-                        <span>{post.likesCount}</span>
+                        <Heart className={`h-5 w-5 ${user && post.isLiked ? 'fill-current' : ''}`} />
                       </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-2 text-text-secondary hover:text-blue-500">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>0</span>
-                      </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-2 text-text-secondary hover:text-green-500">
-                        <Share2 className="h-4 w-4" />
-                        <span>0</span>
-                      </Button>
+                      <span className="text-sm font-medium text-text-primary">
+                        {post.likesCount}
+                      </span>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-text-secondary hover:text-accent">
-                      <BookmarkPlus className="h-4 w-4" />
-                    </Button>
+
+                    {/* Main Content */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                          <Avatar className="h-6 w-6">
+                            {post.author.profilePicture ? (
+                              <AvatarImage src={post.author.profilePicture} />
+                            ) : null}
+                            <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                              {post.author.firstName.charAt(0)}{post.author.lastName.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">
+                            {post.author.firstName} {post.author.lastName}
+                          </span>
+                          <Badge 
+                            variant={post.author.accountType === "alumni" ? "default" : "secondary"}
+                            className="text-xs px-2 py-0"
+                          >
+                            {post.author.accountType === "alumni" ? "Alumni" : "Student"}
+                          </Badge>
+                          <span>•</span>
+                          <span>{formatTimeAgo(post.createdAt)}</span>
+                          <span>•</span>
+                          <span className="text-xs">
+                            {post.author.university}
+                          </span>
+                        </div>
+                        
+                        {/* Post Actions for Author */}
+                        {user && post.author.id === user.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 text-text-secondary hover:text-red-500"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(post.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Post Title */}
+                      <h2 className="text-lg font-semibold text-text-primary mb-2 hover:text-accent">
+                        {post.title}
+                      </h2>
+                      
+                      {/* Category and Tags */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <Badge variant="outline" className="text-xs">
+                          {post.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                        {post.tags.slice(0, 3).map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            #{tag}
+                          </Badge>
+                        ))}
+                        {post.tags.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{post.tags.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Engagement Actions */}
+                      <div className="flex items-center gap-4 text-sm text-text-secondary">
+                        <div className="flex items-center gap-1">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>{post.commentsCount} comments</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Share2 className="h-4 w-4" />
+                          <span>Share</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BookmarkPlus className="h-4 w-4" />
+                          <span>Save</span>
+                        </div>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <span className="text-xs">
+                            {post.viewsCount} views
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

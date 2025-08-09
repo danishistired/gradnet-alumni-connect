@@ -708,6 +708,232 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Get comments for a post
+app.get('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const postId = req.params.id;
+    
+    // Get all comments for this post
+    const comments = db.comments
+      .filter(comment => comment.postId === postId)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Oldest first for threading
+    
+    // Create a map to organize comments by parent
+    const commentMap = new Map();
+    const rootComments = [];
+    
+    // First pass: create comment objects with author info
+    const enrichedComments = comments.map(comment => {
+      const author = db.users.find(user => user.id === comment.authorId);
+      return {
+        ...comment,
+        author: {
+          id: author.id,
+          firstName: author.firstName,
+          lastName: author.lastName,
+          accountType: author.accountType,
+          university: author.university,
+          profilePicture: author.profilePicture || null
+        },
+        timeAgo: getTimeAgo(comment.createdAt),
+        replies: []
+      };
+    });
+    
+    // Second pass: organize into threads
+    enrichedComments.forEach(comment => {
+      commentMap.set(comment.id, comment);
+      
+      if (comment.parentId) {
+        // This is a reply
+        const parent = commentMap.get(comment.parentId);
+        if (parent) {
+          parent.replies.push(comment);
+        }
+      } else {
+        // This is a root comment
+        rootComments.push(comment);
+      }
+    });
+    
+    res.json({
+      success: true,
+      comments: rootComments
+    });
+  } catch (error) {
+    console.error('Get comments error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Add comment to a post
+app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const postId = req.params.id;
+    const { content, parentId } = req.body;
+    
+    // Validation
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Comment content is required' 
+      });
+    }
+    
+    if (content.length > 1000) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Comment is too long (max 1000 characters)' 
+      });
+    }
+    
+    // Check if post exists
+    const post = db.posts.find(p => p.id === postId);
+    if (!post) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Post not found' 
+      });
+    }
+    
+    // If parentId is provided, check if parent comment exists
+    if (parentId) {
+      const parentComment = db.comments.find(c => c.id === parentId && c.postId === postId);
+      if (!parentComment) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Parent comment not found' 
+        });
+      }
+    }
+    
+    // Create new comment
+    const comment = {
+      id: Date.now().toString(),
+      postId,
+      authorId: req.user.userId,
+      content: content.trim(),
+      parentId: parentId || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      likesCount: 0
+    };
+    
+    // Add comment to database
+    db.comments.push(comment);
+    
+    // Update post's comment count
+    const postIndex = db.posts.findIndex(p => p.id === postId);
+    if (postIndex !== -1) {
+      db.posts[postIndex].commentsCount += 1;
+    }
+    
+    await writeDB(db);
+    
+    // Get author info for response
+    const author = db.users.find(user => user.id === req.user.userId);
+    const commentWithAuthor = {
+      ...comment,
+      author: {
+        id: author.id,
+        firstName: author.firstName,
+        lastName: author.lastName,
+        accountType: author.accountType,
+        university: author.university,
+        profilePicture: author.profilePicture || null
+      },
+      timeAgo: getTimeAgo(comment.createdAt),
+      replies: []
+    };
+    
+    res.status(201).json({
+      success: true,
+      message: 'Comment added successfully',
+      comment: commentWithAuthor
+    });
+  } catch (error) {
+    console.error('Add comment error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Delete comment
+app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const commentId = req.params.id;
+    
+    // Find the comment
+    const comment = db.comments.find(c => c.id === commentId);
+    if (!comment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Comment not found' 
+      });
+    }
+    
+    // Check if user owns the comment or the post
+    const post = db.posts.find(p => p.id === comment.postId);
+    if (comment.authorId !== req.user.userId && post.authorId !== req.user.userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not authorized to delete this comment' 
+      });
+    }
+    
+    // Remove comment and all its replies
+    function deleteCommentAndReplies(commentId) {
+      const replies = db.comments.filter(c => c.parentId === commentId);
+      replies.forEach(reply => deleteCommentAndReplies(reply.id));
+      db.comments = db.comments.filter(c => c.id !== commentId);
+    }
+    
+    const deletedCount = db.comments.filter(c => c.id === commentId || isReplyToComment(c, commentId, db.comments)).length;
+    deleteCommentAndReplies(commentId);
+    
+    // Update post's comment count
+    const postIndex = db.posts.findIndex(p => p.id === comment.postId);
+    if (postIndex !== -1) {
+      db.posts[postIndex].commentsCount = Math.max(0, db.posts[postIndex].commentsCount - deletedCount);
+    }
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      message: 'Comment deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete comment error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Helper function to check if a comment is a reply to another comment (recursively)
+function isReplyToComment(comment, targetCommentId, allComments) {
+  if (comment.parentId === targetCommentId) {
+    return true;
+  }
+  if (comment.parentId) {
+    const parent = allComments.find(c => c.id === comment.parentId);
+    if (parent) {
+      return isReplyToComment(parent, targetCommentId, allComments);
+    }
+  }
+  return false;
+}
+
 // Helper function to calculate time ago
 function getTimeAgo(dateString) {
   const now = new Date();
