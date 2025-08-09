@@ -12,10 +12,12 @@ import SkillSelection from "./pages/SkillSelection";
 import CompanySelection from "./pages/CompanySelection";
 import AlumniVerification from "./pages/AlumniVerification";
 import Feed from "./pages/Feed";
+import CreatePost from "./pages/CreatePost";
 import BlogDetail from "./pages/BlogDetail";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BlogProvider } from "@/contexts/BlogContext";
 import { ProtectedRoute, GuestRoute, AuthenticatedRoute, StudentRoute, AlumniRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -28,69 +30,76 @@ const App = () => {
           <Toaster />
           <Sonner />
           <AuthProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* Public routes - accessible to everyone */}
-                <Route path="/" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                
-                {/* Guest-only routes - redirect authenticated users */}
-                <Route path="/login" element={
-                  <GuestRoute>
-                    <Login />
-                  </GuestRoute>
-                } />
-                <Route path="/register" element={
-                  <GuestRoute>
-                    <Register />
-                  </GuestRoute>
-                } />
-                
-                {/* Protected routes - require authentication */}
-                <Route path="/profile" element={
-                  <AuthenticatedRoute>
-                    <Profile />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/skill-selection" element={
-                  <AuthenticatedRoute>
-                    <SkillSelection />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/company-selection" element={
-                  <AuthenticatedRoute>
-                    <CompanySelection />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/feed" element={
-                  <AuthenticatedRoute>
-                    <Feed />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/blog/:id" element={
-                  <AuthenticatedRoute>
-                    <BlogDetail />
-                  </AuthenticatedRoute>
-                } />
-                
-                {/* Alumni-specific routes */}
-                <Route path="/verify" element={
-                  <AlumniRoute>
-                    <AlumniVerification />
-                  </AlumniRoute>
-                } />
-                
-                {/* Admin routes - require authentication (could be extended for admin-only) */}
-                <Route path="/admin" element={
-                  <AuthenticatedRoute>
-                    <AdminPanel />
-                  </AuthenticatedRoute>
-                } />
-                
-                {/* Catch-all route for 404 */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+            <BlogProvider>
+              <BrowserRouter>
+                <Routes>
+                  {/* Public routes - accessible to everyone */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  
+                  {/* Guest-only routes - redirect authenticated users */}
+                  <Route path="/login" element={
+                    <GuestRoute>
+                      <Login />
+                    </GuestRoute>
+                  } />
+                  <Route path="/register" element={
+                    <GuestRoute>
+                      <Register />
+                    </GuestRoute>
+                  } />
+                  
+                  {/* Protected routes - require authentication */}
+                  <Route path="/profile" element={
+                    <AuthenticatedRoute>
+                      <Profile />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/skill-selection" element={
+                    <AuthenticatedRoute>
+                      <SkillSelection />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/company-selection" element={
+                    <AuthenticatedRoute>
+                      <CompanySelection />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/feed" element={
+                    <AuthenticatedRoute>
+                      <Feed />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/create-post" element={
+                    <AuthenticatedRoute>
+                      <CreatePost />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/blog/:id" element={
+                    <AuthenticatedRoute>
+                      <BlogDetail />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  {/* Alumni-specific routes */}
+                  <Route path="/verify" element={
+                    <AlumniRoute>
+                      <AlumniVerification />
+                    </AlumniRoute>
+                  } />
+                  
+                  {/* Admin routes - require authentication (could be extended for admin-only) */}
+                  <Route path="/admin" element={
+                    <AuthenticatedRoute>
+                      <AdminPanel />
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  {/* Catch-all route for 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </BlogProvider>
           </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>

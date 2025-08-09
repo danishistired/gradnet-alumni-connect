@@ -1,339 +1,309 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowUp, ArrowDown, MessageCircle, Share2, TrendingUp, Users, Mail } from "lucide-react";
-import { MessagesDialog } from "@/components/MessagesDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useBlog } from "@/contexts/BlogContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { Heart, MessageCircle, Share2, BookmarkPlus, Search, TrendingUp, Users, GraduationCap, Briefcase, Star, Plus, Trash2 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
-export default function Feed() {
-  const [feedType, setFeedType] = useState("alumni");
-  const [messagesOpen, setMessagesOpen] = useState(false);
+const Feed = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { posts, fetchPosts, likePost, deletePost, loading } = useBlog();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
 
-  const mockAlumniPosts = [
-    {
-      id: 1,
-      author: "Sarah Chen",
-      avatar: "SC",
-      role: "Senior Software Engineer at Google",
-      college: "Stanford University",
-      graduation: "2019",
-      title: "Building Scalable React Applications with TypeScript",
-      preview: "After 5 years at Google, here are the patterns I've learned for creating maintainable React applications at enterprise scale. We'll cover component architecture, state management, and testing strategies...",
-      tags: ["React", "TypeScript", "Architecture"],
-      upvotes: 342,
-      downvotes: 12,
-      comments: 28,
-      timeAgo: "2 hours ago",
-      achievements: ["🏆", "💼", "📚"]
-    },
-    {
-      id: 2,
-      author: "Michael Rodriguez",
-      avatar: "MR",
-      role: "Product Manager at Spotify",
-      college: "UC Berkeley",
-      graduation: "2018",
-      title: "From CS Student to Product Manager: My Journey",
-      preview: "Transitioning from engineering to product management wasn't easy, but it was one of the best decisions I made. Here's how I navigated the career change and what I learned along the way...",
-      tags: ["Career", "Product Management", "Transition"],
-      upvotes: 156,
-      downvotes: 3,
-      comments: 15,
-      timeAgo: "6 hours ago",
-      achievements: ["🚀", "💡"]
-    },
-    {
-      id: 3,
-      author: "Emily Zhang",
-      avatar: "EZ",
-      role: "Data Scientist at Netflix",
-      college: "MIT",
-      graduation: "2020",
-      title: "Machine Learning in Production: Lessons from Netflix",
-      preview: "Building ML models is one thing, but deploying them at scale is another. Here are the key challenges we face at Netflix and how we solve them with robust MLOps practices...",
-      tags: ["Machine Learning", "Data Science", "MLOps"],
-      upvotes: 298,
-      downvotes: 8,
-      comments: 34,
-      timeAgo: "1 day ago",
-      achievements: ["🤖", "📊", "🏆"]
-    }
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const filters = [
+    { id: "all", label: "All Posts", icon: Users },
+    { id: "students", label: "Students", icon: GraduationCap },
+    { id: "alumni", label: "Alumni", icon: Briefcase },
+    { id: "trending", label: "Trending", icon: TrendingUp },
+    { id: "my-posts", label: "My Posts", icon: Star }
   ];
 
-  const mockStudentPosts = [
-    {
-      id: 4,
-      author: "Alex Kim",
-      avatar: "AK",
-      role: "CS Student",
-      college: "Carnegie Mellon University",
-      graduation: "2025",
-      title: "Building My First Full-Stack App with Next.js",
-      preview: "As a sophomore, I decided to challenge myself by building a complete web application. Here's what I learned about Next.js, databases, and deployment along the way...",
-      tags: ["Next.js", "Full-Stack", "Learning"],
-      upvotes: 89,
-      downvotes: 2,
-      comments: 12,
-      timeAgo: "4 hours ago",
-      achievements: ["🌟", "💻"]
-    },
-    {
-      id: 5,
-      author: "Priya Patel",
-      avatar: "PP",
-      role: "Engineering Student",
-      college: "Georgia Tech",
-      graduation: "2024",
-      title: "Internship Hunt: What I Wish I Knew Earlier",
-      preview: "After applying to 100+ internships and getting rejected many times, I finally landed my dream internship. Here are the lessons I learned and tips for fellow students...",
-      tags: ["Internships", "Career", "Tips"],
-      upvotes: 234,
-      downvotes: 5,
-      comments: 18,
-      timeAgo: "12 hours ago",
-      achievements: ["📈", "🎯"]
+  const filteredPosts = posts.filter(post => {
+    // Search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = 
+        post.title.toLowerCase().includes(searchLower) ||
+        post.content.toLowerCase().includes(searchLower) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchLower)) ||
+        `${post.author.firstName} ${post.author.lastName}`.toLowerCase().includes(searchLower);
+      
+      if (!matchesSearch) return false;
     }
-  ];
 
-  const currentPosts = feedType === "alumni" ? mockAlumniPosts : mockStudentPosts;
+    // Category filter
+    if (activeFilter === "all") return true;
+    if (activeFilter === "students") return post.author.accountType === "student";
+    if (activeFilter === "alumni") return post.author.accountType === "alumni";
+    if (activeFilter === "trending") return post.likesCount >= 5; // Posts with 5+ likes
+    if (activeFilter === "my-posts") return user && post.author.id === user.id;
+    
+    return true;
+  });
 
-  const trendingTopics = ["React", "Machine Learning", "Career Advice", "Internships", "Startups", "Web Development"];
-  const colleges = ["Stanford University", "MIT", "UC Berkeley", "Carnegie Mellon", "Georgia Tech"];
-
-  const handlePostClick = (postId: number) => {
-    navigate(`/blog/${postId}`);
+  const handleLike = async (postId: string) => {
+    await likePost(postId);
   };
 
-  const handleVote = (postId: number, type: 'up' | 'down', e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Simulate voting logic
-    console.log(`Voted ${type} on post ${postId}`);
+  const handleDelete = async (postId: string) => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deletePost(postId);
+    }
+  };
+
+  const truncateContent = (content: string, maxLength: number = 300) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + "...";
+  };
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const postTime = new Date(timestamp);
+    const diffMs = now.getTime() - postTime.getTime();
+    
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    
+    return postTime.toLocaleDateString();
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar 
-        user={{ type: 'student', verified: true }} 
-        onMessagesClick={() => setMessagesOpen(true)}
-      />
+      <Navbar />
       
-      <div className="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Feed */}
-          <div className="lg:col-span-3">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-text-primary mb-4">Your Feed</h1>
-              
-              {/* Feed Type Tabs */}
-              <Tabs value={feedType} onValueChange={setFeedType} className="mb-4">
-                <TabsList className="grid w-full max-w-md grid-cols-2">
-                  <TabsTrigger value="alumni">Alumni Blogs</TabsTrigger>
-                  <TabsTrigger value="student">Student Blogs</TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {/* Filters */}
-              <div className="flex flex-wrap gap-3 mb-6">
-                <Select>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Domain" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="react">React</SelectItem>
-                    <SelectItem value="ml">Machine Learning</SelectItem>
-                    <SelectItem value="product">Product</SelectItem>
-                    <SelectItem value="career">Career</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="College" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {colleges.map((college) => (
-                      <SelectItem key={college} value={college.toLowerCase().replace(/\s+/g, '-')}>
-                        {college}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Select>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Recent</SelectItem>
-                    <SelectItem value="popular">Popular</SelectItem>
-                    <SelectItem value="discussed">Most Discussed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+      <div className="pt-20 pb-16 px-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl font-bold text-text-primary mb-2">Community Feed</h1>
+              <p className="text-text-secondary">Connect, share, and learn from the GradNet community</p>
             </div>
+            {user && (
+              <Button 
+                onClick={() => navigate("/create-post")}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Post
+              </Button>
+            )}
+          </div>
 
-            {/* Posts */}
-            <div className="space-y-4">
-              {currentPosts.map((post) => (
-                <Card 
-                  key={post.id} 
-                  className="card-elevated cursor-pointer"
-                  onClick={() => handlePostClick(post.id)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex gap-4">
-                      {/* Avatar & Voting */}
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 bg-accent-light rounded-full flex items-center justify-center">
-                          <span className="text-accent font-semibold text-sm">
-                            {post.avatar}
-                          </span>
-                        </div>
-                        
-                        {/* Voting */}
-                        <div className="flex flex-col items-center gap-1">
-                          <button 
-                            className="p-1 hover:bg-surface-muted rounded"
-                            onClick={(e) => handleVote(post.id, 'up', e)}
-                          >
-                            <ArrowUp className="w-4 h-4 text-text-muted hover:text-accent" />
-                          </button>
-                          <span className="text-sm font-medium text-text-primary">
-                            {post.upvotes - post.downvotes}
-                          </span>
-                          <button 
-                            className="p-1 hover:bg-surface-muted rounded"
-                            onClick={(e) => handleVote(post.id, 'down', e)}
-                          >
-                            <ArrowDown className="w-4 h-4 text-text-muted hover:text-accent" />
-                          </button>
-                        </div>
-                      </div>
+          {/* Search and Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-text-secondary" />
+              <Input
+                placeholder="Search posts, people, or topics..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {filters.map((filter) => {
+                const Icon = filter.icon;
+                return (
+                  <Button
+                    key={filter.id}
+                    variant={activeFilter === filter.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveFilter(filter.id)}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {filter.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
 
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-text-primary">{post.author}</h3>
-                              <span className="text-text-muted">•</span>
-                              <span className="text-text-secondary text-sm">{post.timeAgo}</span>
-                            </div>
-                            <p className="text-text-secondary text-sm">{post.role}</p>
-                            <p className="text-text-muted text-sm">
-                              {post.college} • Class of {post.graduation}
-                            </p>
-                          </div>
-                          
-                          {/* Achievement badges */}
-                          <div className="flex gap-1">
-                            {post.achievements.map((achievement, idx) => (
-                              <span key={idx} className="text-lg">{achievement}</span>
-                            ))}
-                          </div>
-                        </div>
+          {/* Empty State */}
+          {!loading && filteredPosts.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-text-secondary mb-4">
+                {searchQuery || activeFilter !== "all" 
+                  ? "No posts found matching your criteria." 
+                  : "No posts yet. Be the first to share something!"}
+              </p>
+              {user && (
+                <Button onClick={() => navigate("/create-post")}>
+                  Create Your First Post
+                </Button>
+              )}
+            </div>
+          )}
 
-                        <h4 className="font-semibold text-text-primary text-lg mb-2 hover:text-accent">
-                          {post.title}
-                        </h4>
-                        
-                        <p className="text-text-secondary mb-4 line-clamp-2">
-                          {post.preview}
+          {/* Posts Feed */}
+          <div className="space-y-6">
+            {filteredPosts.map((post) => (
+              <Card key={post.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        {post.author.profilePicture ? (
+                          <AvatarImage src={post.author.profilePicture} />
+                        ) : null}
+                        <AvatarFallback className="bg-accent text-accent-foreground">
+                          {post.author.firstName.charAt(0)}{post.author.lastName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-text-primary">
+                            {post.author.firstName} {post.author.lastName}
+                          </h3>
+                          <Badge variant={post.author.accountType === "alumni" ? "default" : "secondary"}>
+                            {post.author.accountType === "alumni" ? "Alumni" : "Student"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-text-secondary">
+                          {post.author.accountType === "alumni" 
+                            ? `Alumni • ${post.author.university}`
+                            : `Student • ${post.author.university}`
+                          }
                         </p>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {post.tags.map((tag) => (
-                            <Badge 
-                              key={tag} 
-                              variant="secondary" 
-                              className="bg-accent-light text-accent border-accent/20"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-4 text-sm text-text-muted">
-                          <button 
-                            className="flex items-center gap-1 hover:text-accent"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                            {post.comments} comments
-                          </button>
-                          <button 
-                            className="flex items-center gap-1 hover:text-accent"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share2 className="w-4 h-4" />
-                            Share
-                          </button>
-                        </div>
+                        <p className="text-xs text-text-secondary">{formatTimeAgo(post.createdAt)}</p>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Trending Topics */}
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-accent" />
-                  Trending Topics
-                </h3>
-                <div className="space-y-2">
-                  {trendingTopics.map((topic, idx) => (
-                    <button 
-                      key={topic}
-                      className="block w-full text-left p-2 rounded hover:bg-surface-muted text-text-secondary hover:text-accent text-sm"
+                    
+                    {/* Post Actions for Author */}
+                    {user && post.author.id === user.id && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(post.id)}
+                          className="text-text-secondary hover:text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  {/* Post Title */}
+                  <h2 className="text-xl font-semibold text-text-primary mb-3">{post.title}</h2>
+                  
+                  {/* Post Content */}
+                  <div className="prose prose-sm max-w-none text-text-primary mb-4">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeHighlight]}
+                      components={{
+                        // Customize markdown rendering
+                        h1: ({children}) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                        h2: ({children}) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                        h3: ({children}) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                        p: ({children}) => <p className="mb-2 leading-relaxed">{children}</p>,
+                        code: ({children, className}) => {
+                          const isInline = !className;
+                          return isInline ? (
+                            <code className="bg-surface-muted px-1 py-0.5 rounded text-sm">{children}</code>
+                          ) : (
+                            <code className={className}>{children}</code>
+                          );
+                        },
+                        pre: ({children}) => (
+                          <pre className="bg-surface-muted p-3 rounded-lg text-sm overflow-x-auto">{children}</pre>
+                        ),
+                        a: ({children, href}) => (
+                          <a href={href} className="text-accent hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>
+                        ),
+                        ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                        ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                      }}
                     >
-                      #{topic}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      {truncateContent(post.content)}
+                    </ReactMarkdown>
+                  </div>
+                  
+                  {/* Category Badge */}
+                  <Badge variant="outline" className="mb-4">
+                    {post.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
+                  
+                  {/* Tags */}
+                  {post.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {post.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
 
-            {/* Quick Actions */}
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-accent" />
-                  Quick Actions
-                </h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start text-sm">
-                    Message Alumni
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-sm">
-                    Find Mentors
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start text-sm">
-                    Join Study Groups
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Engagement Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-6">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`flex items-center gap-2 text-text-secondary hover:text-red-500 ${
+                          user && post.isLiked ? 'text-red-500' : ''
+                        }`}
+                        onClick={() => user && handleLike(post.id)}
+                        disabled={!user}
+                      >
+                        <Heart className={`h-4 w-4 ${user && post.isLiked ? 'fill-current' : ''}`} />
+                        <span>{post.likesCount}</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="flex items-center gap-2 text-text-secondary hover:text-blue-500">
+                        <MessageCircle className="h-4 w-4" />
+                        <span>0</span>
+                      </Button>
+                      <Button variant="ghost" size="sm" className="flex items-center gap-2 text-text-secondary hover:text-green-500">
+                        <Share2 className="h-4 w-4" />
+                        <span>0</span>
+                      </Button>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-text-secondary hover:text-accent">
+                      <BookmarkPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+
+          {/* Load More */}
+          {filteredPosts.length > 0 && (
+            <div className="text-center">
+              <Button variant="outline" className="w-full sm:w-auto">
+                Load More Posts
+              </Button>
+            </div>
+          )}
         </div>
       </div>
-      
-      <MessagesDialog 
-        open={messagesOpen}
-        onOpenChange={setMessagesOpen}
-      />
     </div>
   );
-}
+};
+
+export default Feed;

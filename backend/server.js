@@ -35,7 +35,15 @@ async function initializeDB() {
 async function readDB() {
   try {
     const data = await fs.readFile(DB_FILE, 'utf8');
-    return JSON.parse(data);
+    const db = JSON.parse(data);
+    
+    // Ensure all required arrays exist
+    if (!db.users) db.users = [];
+    if (!db.posts) db.posts = [];
+    if (!db.comments) db.comments = [];
+    if (!db.likes) db.likes = [];
+    
+    return db;
   } catch (error) {
     return { users: [], posts: [], comments: [], likes: [] };
   }
@@ -422,6 +430,308 @@ app.post('/api/profile/picture', authenticateToken, async (req, res) => {
     });
   }
 });
+
+// Blog/Post endpoints
+
+// Get all posts with filtering and pagination
+app.get('/api/posts', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 10, category, authorType, sortBy = 'latest' } = req.query;
+    const userAccountType = req.user.accountType;
+    
+    const db = await readDB();
+    let filteredPosts = db.posts.filter(post => post.status === 'published');
+    
+    // Filter by author type if specified
+    if (authorType) {
+      filteredPosts = filteredPosts.filter(post => {
+        const author = db.users.find(u => u.id === post.authorId);
+        return author && author.accountType === authorType;
+      });
+    }
+    
+    // Filter by category if specified
+    if (category && category !== 'all') {
+      filteredPosts = filteredPosts.filter(post => post.category === category);
+    }
+    
+    // Sort posts
+    filteredPosts.sort((a, b) => {
+      switch (sortBy) {
+        case 'likes': return b.likesCount - a.likesCount;
+        case 'comments': return b.commentsCount - a.commentsCount;
+        case 'views': return b.viewsCount - a.viewsCount;
+        default: return new Date(b.createdAt) - new Date(a.createdAt);
+      }
+    });
+    
+    // Pagination
+    const startIndex = (page - 1) * limit;
+    const paginatedPosts = filteredPosts.slice(startIndex, startIndex + parseInt(limit));
+    
+    // Add author information and like status
+    const postsWithDetails = paginatedPosts.map(post => {
+      const author = db.users.find(u => u.id === post.authorId);
+      const isLiked = db.likes.some(like => like.postId === post.id && like.userId === req.user.userId);
+      
+      return {
+        ...post,
+        author: author ? {
+          id: author.id,
+          firstName: author.firstName,
+          lastName: author.lastName,
+          accountType: author.accountType,
+          university: author.university,
+          profilePicture: author.profilePicture
+        } : null,
+        isLiked,
+        timeAgo: getTimeAgo(post.createdAt)
+      };
+    });
+    
+    res.json({
+      success: true,
+      posts: postsWithDetails,
+      totalPosts: filteredPosts.length,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(filteredPosts.length / limit)
+    });
+  } catch (error) {
+    console.error('Get posts error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Create new post
+app.post('/api/posts', authenticateToken, async (req, res) => {
+  try {
+    const { title, content, excerpt, tags, category, targetAudience } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Title and content are required' 
+      });
+    }
+    
+    const db = await readDB();
+    
+    const newPost = {
+      id: Date.now().toString(),
+      authorId: req.user.userId,
+      title,
+      content,
+      excerpt: excerpt || content.substring(0, 150).replace(/[#*`]/g, '') + '...',
+      tags: tags || [],
+      category: category || 'general',
+      targetAudience: targetAudience || 'both',
+      status: 'published',
+      likesCount: 0,
+      commentsCount: 0,
+      viewsCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      publishedAt: new Date().toISOString()
+    };
+    
+    db.posts.push(newPost);
+    await writeDB(db);
+    
+    // Get author info for response
+    const author = db.users.find(u => u.id === req.user.userId);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Post created successfully',
+      post: {
+        ...newPost,
+        author: {
+          id: author.id,
+          firstName: author.firstName,
+          lastName: author.lastName,
+          accountType: author.accountType,
+          university: author.university,
+          profilePicture: author.profilePicture
+        },
+        isLiked: false,
+        timeAgo: 'Just now'
+      }
+    });
+  } catch (error) {
+    console.error('Create post error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Get single post
+app.get('/api/posts/:id', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const post = db.posts.find(p => p.id === req.params.id);
+    
+    if (!post) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Post not found' 
+      });
+    }
+    
+    // Increment view count
+    post.viewsCount++;
+    await writeDB(db);
+    
+    // Get author info
+    const author = db.users.find(u => u.id === post.authorId);
+    const isLiked = db.likes.some(like => like.postId === post.id && like.userId === req.user.userId);
+    
+    res.json({
+      success: true,
+      post: {
+        ...post,
+        author: author ? {
+          id: author.id,
+          firstName: author.firstName,
+          lastName: author.lastName,
+          accountType: author.accountType,
+          university: author.university,
+          profilePicture: author.profilePicture
+        } : null,
+        isLiked,
+        timeAgo: getTimeAgo(post.createdAt)
+      }
+    });
+  } catch (error) {
+    console.error('Get post error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Like/Unlike post
+app.post('/api/posts/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.userId;
+    
+    const db = await readDB();
+    const post = db.posts.find(p => p.id === postId);
+    
+    if (!post) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Post not found' 
+      });
+    }
+    
+    const existingLike = db.likes.find(l => l.postId === postId && l.userId === userId);
+    
+    if (existingLike) {
+      // Unlike
+      db.likes = db.likes.filter(l => l.id !== existingLike.id);
+      post.likesCount = Math.max(0, post.likesCount - 1);
+    } else {
+      // Like
+      const newLike = {
+        id: Date.now().toString(),
+        postId,
+        userId,
+        createdAt: new Date().toISOString()
+      };
+      db.likes.push(newLike);
+      post.likesCount++;
+    }
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      isLiked: !existingLike,
+      likesCount: post.likesCount
+    });
+  } catch (error) {
+    console.error('Like post error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Delete post
+app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const postIndex = db.posts.findIndex(p => p.id === req.params.id);
+    
+    if (postIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Post not found' 
+      });
+    }
+    
+    const post = db.posts[postIndex];
+    
+    // Check if user is the author
+    if (post.authorId !== req.user.userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You can only delete your own posts' 
+      });
+    }
+    
+    // Remove post and related data
+    db.posts.splice(postIndex, 1);
+    db.likes = db.likes.filter(l => l.postId !== req.params.id);
+    db.comments = db.comments.filter(c => c.postId !== req.params.id);
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete post error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Helper function to calculate time ago
+function getTimeAgo(dateString) {
+  const now = new Date();
+  const postDate = new Date(dateString);
+  const diffInMinutes = Math.floor((now - postDate) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays}d ago`;
+  
+  const diffInWeeks = Math.floor(diffInDays / 7);
+  if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths}mo ago`;
+  
+  const diffInYears = Math.floor(diffInDays / 365);
+  return `${diffInYears}y ago`;
+}
 
 // Verify token endpoint
 app.get('/api/verify', authenticateToken, async (req, res) => {
