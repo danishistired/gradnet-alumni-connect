@@ -65,6 +65,10 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
     navigate("/");
   };
 
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 bg-surface border-b border-border z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,11 +196,11 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarImage 
-                          src="https://mdbcdn.b-cdn.net/img/new/avatars/2.webp"
+                          src={user.profilePicture || undefined}
                           alt={`${user.firstName} ${user.lastName}`}
                         />
-                        <AvatarFallback>
-                          {user.firstName ? user.firstName.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                        <AvatarFallback className="bg-accent text-accent-foreground">
+                          {getInitials(user.firstName, user.lastName)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>

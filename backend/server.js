@@ -22,7 +22,12 @@ async function initializeDB() {
     await fs.access(DB_FILE);
   } catch (error) {
     // File doesn't exist, create it
-    await fs.writeFile(DB_FILE, JSON.stringify({ users: [] }, null, 2));
+    await fs.writeFile(DB_FILE, JSON.stringify({ 
+      users: [], 
+      posts: [], 
+      comments: [], 
+      likes: [] 
+    }, null, 2));
   }
 }
 
@@ -32,7 +37,7 @@ async function readDB() {
     const data = await fs.readFile(DB_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    return { users: [] };
+    return { users: [], posts: [], comments: [], likes: [] };
   }
 }
 
@@ -48,6 +53,24 @@ function isValidEmail(email, accountType) {
   }
   // For alumni, any valid email format
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Middleware to authenticate JWT token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) {
+    return res.status(401).json({ success: false, message: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, message: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
 }
 
 // Register endpoint
@@ -113,7 +136,17 @@ app.post('/api/register', async (req, res) => {
       accountType,
       university: university || '',
       graduationYear: graduationYear || '',
-      createdAt: new Date().toISOString()
+      profilePicture: null,
+      bio: '',
+      skills: [],
+      company: '',
+      jobTitle: '',
+      linkedIn: '',
+      github: '',
+      website: '',
+      location: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     db.users.push(newUser);
@@ -137,7 +170,8 @@ app.post('/api/register', async (req, res) => {
         email: newUser.email,
         accountType: newUser.accountType,
         university: newUser.university,
-        graduationYear: newUser.graduationYear
+        graduationYear: newUser.graduationYear,
+        profilePicture: newUser.profilePicture
       }
     });
 
@@ -211,7 +245,8 @@ app.post('/api/login', async (req, res) => {
         email: user.email,
         accountType: user.accountType,
         university: user.university,
-        graduationYear: user.graduationYear
+        graduationYear: user.graduationYear,
+        profilePicture: user.profilePicture || null
       }
     });
 
@@ -224,21 +259,175 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Verify token endpoint
-app.get('/api/verify', async (req, res) => {
+// Get user profile
+app.get('/api/profile', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({ 
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({ 
         success: false, 
-        message: 'No token provided' 
+        message: 'User not found' 
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        accountType: user.accountType,
+        university: user.university,
+        graduationYear: user.graduationYear,
+        profilePicture: user.profilePicture || null,
+        bio: user.bio || '',
+        skills: user.skills || [],
+        company: user.company || '',
+        jobTitle: user.jobTitle || '',
+        linkedIn: user.linkedIn || '',
+        github: user.github || '',
+        website: user.website || '',
+        location: user.location || ''
+      }
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Update user profile
+app.put('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      bio, 
+      skills, 
+      company, 
+      jobTitle, 
+      linkedIn, 
+      github, 
+      website, 
+      location, 
+      university,
+      graduationYear 
+    } = req.body;
+
     const db = await readDB();
-    const user = db.users.find(u => u.id === decoded.userId);
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Update user profile
+    db.users[userIndex] = {
+      ...db.users[userIndex],
+      firstName: firstName || db.users[userIndex].firstName,
+      lastName: lastName || db.users[userIndex].lastName,
+      bio: bio || '',
+      skills: skills || [],
+      company: company || '',
+      jobTitle: jobTitle || '',
+      linkedIn: linkedIn || '',
+      github: github || '',
+      website: website || '',
+      location: location || '',
+      university: university || db.users[userIndex].university,
+      graduationYear: graduationYear || db.users[userIndex].graduationYear,
+      updatedAt: new Date().toISOString()
+    };
+
+    await writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: db.users[userIndex].id,
+        firstName: db.users[userIndex].firstName,
+        lastName: db.users[userIndex].lastName,
+        email: db.users[userIndex].email,
+        accountType: db.users[userIndex].accountType,
+        university: db.users[userIndex].university,
+        graduationYear: db.users[userIndex].graduationYear,
+        profilePicture: db.users[userIndex].profilePicture,
+        bio: db.users[userIndex].bio,
+        skills: db.users[userIndex].skills,
+        company: db.users[userIndex].company,
+        jobTitle: db.users[userIndex].jobTitle,
+        linkedIn: db.users[userIndex].linkedIn,
+        github: db.users[userIndex].github,
+        website: db.users[userIndex].website,
+        location: db.users[userIndex].location
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Update profile picture
+app.post('/api/profile/picture', authenticateToken, async (req, res) => {
+  try {
+    const { profilePicture } = req.body;
+
+    if (!profilePicture) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Profile picture data is required' 
+      });
+    }
+
+    const db = await readDB();
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Update profile picture (store as base64 or URL)
+    db.users[userIndex].profilePicture = profilePicture;
+    db.users[userIndex].updatedAt = new Date().toISOString();
+
+    await writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      profilePicture: profilePicture
+    });
+  } catch (error) {
+    console.error('Update profile picture error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Verify token endpoint
+app.get('/api/verify', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.userId);
 
     if (!user) {
       return res.status(401).json({ 
@@ -256,7 +445,8 @@ app.get('/api/verify', async (req, res) => {
         email: user.email,
         accountType: user.accountType,
         university: user.university,
-        graduationYear: user.graduationYear
+        graduationYear: user.graduationYear,
+        profilePicture: user.profilePicture || null
       }
     });
 

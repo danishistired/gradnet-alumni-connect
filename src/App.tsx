@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import Profile from "./pages/Profile";
 import SkillSelection from "./pages/SkillSelection";
 import CompanySelection from "./pages/CompanySelection";
 import AlumniVerification from "./pages/AlumniVerification";
@@ -46,6 +47,11 @@ const App = () => {
                 } />
                 
                 {/* Protected routes - require authentication */}
+                <Route path="/profile" element={
+                  <AuthenticatedRoute>
+                    <Profile />
+                  </AuthenticatedRoute>
+                } />
                 <Route path="/skill-selection" element={
                   <AuthenticatedRoute>
                     <SkillSelection />

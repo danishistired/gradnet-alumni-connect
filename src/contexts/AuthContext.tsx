@@ -8,6 +8,7 @@ interface User {
   accountType: 'student' | 'alumni';
   university: string;
   graduationYear: string;
+  profilePicture?: string;
 }
 
 interface AuthContextType {
