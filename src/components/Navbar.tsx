@@ -238,7 +238,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                 </DropdownMenu>
 
                 {/* Post Blog Button */}
-                <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover hidden sm:flex">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-accent hover:bg-accent-hover hidden sm:flex"
+                  onClick={() => navigate("/create-post")}
+                >
                   <Plus className="w-4 h-4 mr-1" />
                   Post Blog
                 </Button>
@@ -317,7 +322,15 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     Network
                   </Link>
                   
-                  <Button variant="default" size="sm" className="bg-accent hover:bg-accent-hover justify-start">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="bg-accent hover:bg-accent-hover justify-start"
+                    onClick={() => {
+                      navigate("/create-post");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
                     <Plus className="w-4 h-4 mr-1" />
                     Post Blog
                   </Button>

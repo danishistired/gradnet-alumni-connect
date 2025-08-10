@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Heart, MessageCircle, Share2, BookmarkPlus, Search, TrendingUp, Users, GraduationCap, Briefcase, Star, Plus, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, BookmarkPlus, Search, TrendingUp, Users, GraduationCap, Briefcase, Star, Trash2 } from "lucide-react";
 
 const Feed = () => {
   const navigate = useNavigate();
@@ -85,23 +85,6 @@ const Feed = () => {
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
           
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold text-text-primary mb-2">Community Feed</h1>
-              <p className="text-text-secondary">Connect, share, and learn from the GradNet community</p>
-            </div>
-            {user && (
-              <Button 
-                onClick={() => navigate("/create-post")}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create Post
-              </Button>
-            )}
-          </div>
-
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
@@ -140,11 +123,6 @@ const Feed = () => {
                   ? "No posts found matching your criteria." 
                   : "No posts yet. Be the first to share something!"}
               </p>
-              {user && (
-                <Button onClick={() => navigate("/create-post")}>
-                  Create Your First Post
-                </Button>
-              )}
             </div>
           )}
 

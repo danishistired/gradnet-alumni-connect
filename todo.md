@@ -13,9 +13,9 @@
 - [] alumnis network for people wanting to join cu
     - filter questions
     - 
+- [] fix the readme
 
-
-#Shit for later
+# Shit for later
 - [] simple share feature
 - [] add new logo
 - [] profile banner
