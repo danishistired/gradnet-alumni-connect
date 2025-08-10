@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
 import { ArrowLeft, Save, Eye, X, Hash } from "lucide-react";
 import MDEditor from '@uiw/react-md-editor';
@@ -305,9 +306,12 @@ const CreatePost = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center text-sm font-medium">
-                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                      </div>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.profilePicture || undefined} />
+                        <AvatarFallback className="bg-accent text-accent-foreground text-sm">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className="font-medium text-text-primary">
                           {user.firstName} {user.lastName}
