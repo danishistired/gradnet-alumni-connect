@@ -95,7 +95,7 @@ export const Sidebar = () => {
                 "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
                 isActive(item.path)
                   ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                  : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
               )}
             >
               <item.icon className="w-4 h-4" />
@@ -171,7 +171,7 @@ export const Sidebar = () => {
                     "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors group",
                     isActive(`/g/${community.name}`)
                       ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                      : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
                   )}
                 >
                   <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">

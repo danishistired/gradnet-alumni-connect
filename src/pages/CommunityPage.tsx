@@ -55,7 +55,7 @@ export const CommunityPage = () => {
 
   const fetchCommunity = async () => {
     try {
-      const response = await fetch(`/api/communities/${communityName}`);
+      const response = await fetch(`http://localhost:5000/api/communities/${communityName}`);
       const data = await response.json();
       
       if (data.success) {
@@ -69,7 +69,7 @@ export const CommunityPage = () => {
   const fetchCommunityPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/communities/${communityName}/posts`);
+      const response = await fetch(`http://localhost:5000/api/communities/${communityName}/posts`);
       const data = await response.json();
       
       if (data.success) {
@@ -189,7 +189,7 @@ export const CommunityPage = () => {
                       <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
                     </div>
                     
-                    <Link to={`/post/${post.id}`} className="block group">
+                    <Link to={`/blog/${post.id}`} className="block group">
                       <h3 className="text-lg font-semibold mb-2 group-hover:text-accent transition-colors">
                         {post.title}
                       </h3>

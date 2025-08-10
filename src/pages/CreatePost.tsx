@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,36 @@ import '@uiw/react-md-editor/markdown-editor.css';
 
 const CreatePost = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { createPost } = useBlog();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTag, setNewTag] = useState("");
+  const [communityId, setCommunityId] = useState<string | null>(null);
+  const [communityName, setCommunityName] = useState<string>("");
+
+  useEffect(() => {
+    const communityParam = searchParams.get('community');
+    if (communityParam) {
+      setCommunityId(communityParam);
+      fetchCommunityInfo(communityParam);
+    }
+  }, [searchParams]);
+
+  const fetchCommunityInfo = async (id: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/communities`);
+      const data = await response.json();
+      if (data.success) {
+        const community = data.communities.find((c: any) => c.id === id);
+        if (community) {
+          setCommunityName(community.name);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch community info:', error);
+    }
+  };
 
   const [formData, setFormData] = useState({
     title: "",
@@ -27,7 +53,8 @@ const CreatePost = () => {
     excerpt: "",
     tags: [] as string[],
     category: "general",
-    targetAudience: "both" as "students" | "alumni" | "both"
+    targetAudience: "both" as "students" | "alumni" | "both",
+    communityId: null as string | null
   });
 
   const categories = [
@@ -53,13 +80,20 @@ const CreatePost = () => {
 
     setIsSubmitting(true);
     try {
-      const result = await createPost({
+      const postData = {
         ...formData,
-        excerpt: formData.excerpt || generateExcerpt(formData.content)
-      });
+        excerpt: formData.excerpt || generateExcerpt(formData.content),
+        communityId: communityId
+      };
+      
+      const result = await createPost(postData);
 
       if (result.success) {
-        navigate("/feed");
+        if (communityId && communityName) {
+          navigate(`/g/${communityName}`);
+        } else {
+          navigate("/feed");
+        }
       } else {
         alert(result.message);
       }
@@ -117,15 +151,26 @@ const CreatePost = () => {
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
-                onClick={() => navigate("/feed")}
+                onClick={() => {
+                  if (communityId && communityName) {
+                    navigate(`/g/${communityName}`);
+                  } else {
+                    navigate("/feed");
+                  }
+                }}
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Feed
+                {communityName ? `Back to g/${communityName}` : "Back to Feed"}
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-text-primary">Create New Post</h1>
-                <p className="text-text-secondary">Share your thoughts with the GradNet community</p>
+                <p className="text-text-secondary">
+                  {communityName 
+                    ? `Share your thoughts with g/${communityName}`
+                    : "Share your thoughts with the GradNet community"
+                  }
+                </p>
               </div>
             </div>
             

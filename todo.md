@@ -16,7 +16,7 @@
 - [x] fix the readme
 - [x] remove fake data from the landing page
 - [x] sidebar
-- [] communities
+- [x] communities
 
 # Shit for later
 - [] simple share feature

@@ -53,6 +53,7 @@ interface CreatePostData {
   tags: string[];
   category: string;
   targetAudience: 'students' | 'alumni' | 'both';
+  communityId?: string | null;
 }
 
 interface BlogFilters {
