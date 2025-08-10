@@ -26,6 +26,10 @@ interface FollowContextType {
   getFollowing: (userId: string) => Promise<FollowUser[]>;
   getFollowCounts: (userId: string) => Promise<FollowCounts>;
   
+  // Force refresh mechanism
+  refreshFollowData: () => void;
+  followDataVersion: number;
+  
   // State
   loading: boolean;
 }
@@ -39,8 +43,13 @@ interface FollowProviderProps {
 export const FollowProvider = ({ children }: FollowProviderProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [followDataVersion, setFollowDataVersion] = useState(0);
 
   const API_BASE_URL = 'http://localhost:5000/api';
+
+  const refreshFollowData = useCallback(() => {
+    setFollowDataVersion(prev => prev + 1);
+  }, []);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -63,6 +72,7 @@ export const FollowProvider = ({ children }: FollowProviderProps) => {
       const data = await response.json();
       
       if (data.success) {
+        refreshFollowData(); // Refresh follow data after successful follow
         return true;
       } else {
         console.error('Follow failed:', data.message);
@@ -74,7 +84,7 @@ export const FollowProvider = ({ children }: FollowProviderProps) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, refreshFollowData]);
 
   const unfollowUser = useCallback(async (userId: string): Promise<boolean> => {
     if (!user) return false;
@@ -89,6 +99,7 @@ export const FollowProvider = ({ children }: FollowProviderProps) => {
       const data = await response.json();
       
       if (data.success) {
+        refreshFollowData(); // Refresh follow data after successful unfollow
         return true;
       } else {
         console.error('Unfollow failed:', data.message);
@@ -100,7 +111,7 @@ export const FollowProvider = ({ children }: FollowProviderProps) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, refreshFollowData]);
 
   const checkFollowStatus = useCallback(async (userId: string): Promise<boolean> => {
     if (!user) return false;
@@ -195,6 +206,8 @@ export const FollowProvider = ({ children }: FollowProviderProps) => {
     getFollowers,
     getFollowing,
     getFollowCounts,
+    refreshFollowData,
+    followDataVersion,
     loading
   };
 

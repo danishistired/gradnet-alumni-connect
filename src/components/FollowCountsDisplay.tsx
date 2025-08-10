@@ -7,7 +7,7 @@ interface FollowCountsDisplayProps {
 }
 
 export const FollowCountsDisplay = ({ userId, className = "" }: FollowCountsDisplayProps) => {
-  const { getFollowCounts } = useFollow();
+  const { getFollowCounts, followDataVersion } = useFollow();
   const [counts, setCounts] = useState<FollowCounts>({ followersCount: 0, followingCount: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +27,7 @@ export const FollowCountsDisplay = ({ userId, className = "" }: FollowCountsDisp
     if (userId) {
       fetchCounts();
     }
-  }, [userId, getFollowCounts]);
+  }, [userId, getFollowCounts, followDataVersion]); // Add followDataVersion to dependencies
 
   if (loading) {
     return (

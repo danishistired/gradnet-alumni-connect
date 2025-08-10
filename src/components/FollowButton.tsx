@@ -20,7 +20,7 @@ export const FollowButton = ({
   className = ""
 }: FollowButtonProps) => {
   const { user } = useAuth();
-  const { followUser, unfollowUser, checkFollowStatus, loading } = useFollow();
+  const { followUser, unfollowUser, checkFollowStatus, loading, followDataVersion } = useFollow();
   const [isFollowing, setIsFollowing] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
 
@@ -36,7 +36,7 @@ export const FollowButton = ({
     };
     
     checkStatus();
-  }, [userId, checkFollowStatus]);
+  }, [userId, checkFollowStatus, followDataVersion]); // Add followDataVersion to dependencies
 
   const handleFollow = async () => {
     setButtonLoading(true);
