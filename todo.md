@@ -5,7 +5,7 @@
 - [x] remove the cart 
 - [] tldr ai 
 - [] admin moderation 
-- [] add regex function to check for valid emails 
+- [x] add regex function to check for valid emails 
 - [] network tab (recomment people with the same skills)
 - [x] connect/follow feature
 - [] add data flow diagrams in the ppt (excalidraw)
@@ -13,7 +13,7 @@
 - [] alumnis network for people wanting to join cu
     - filter questions
     - 
-- [] fix the readme
+- [x] fix the readme
 - [x] remove fake data from the landing page
 
 # Shit for later
@@ -24,3 +24,4 @@
 
 # Bugs
 - [] fix where we end up when we launch the website
+- [] following feature bug where every user is following the user i followed with another user  

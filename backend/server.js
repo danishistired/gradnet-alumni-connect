@@ -29,7 +29,9 @@ async function initializeDB() {
       likes: [],
       commentLikes: [],
       follows: [],
-      notifications: []
+      notifications: [],
+      communities: [],
+      communityMembers: []
     }, null, 2));
   }
 }
@@ -48,10 +50,12 @@ async function readDB() {
     if (!db.commentLikes) db.commentLikes = [];
     if (!db.follows) db.follows = [];
     if (!db.notifications) db.notifications = [];
+    if (!db.communities) db.communities = [];
+    if (!db.communityMembers) db.communityMembers = [];
     
     return db;
   } catch (error) {
-    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [], notifications: [] };
+    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [], notifications: [], communities: [], communityMembers: [] };
   }
 }
 
@@ -1490,8 +1494,290 @@ app.patch('/api/notifications/read-all', authenticateToken, async (req, res) => 
 });
 
 // Initialize database and start server
-initializeDB().then(() => {
+initializeDB().then(async () => {
+  // Create default communities if none exist
+  const db = await readDB();
+  if (db.communities.length === 0) {
+    const defaultCommunities = [
+      {
+        id: Date.now().toString() + '1',
+        name: 'React',
+        displayName: 'React Development',
+        description: 'Everything about React, hooks, components, and modern frontend development',
+        memberCount: 0,
+        postCount: 0,
+        icon: 'R',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now().toString() + '2',
+        name: 'Cybersecurity',
+        displayName: 'Cybersecurity & InfoSec',
+        description: 'Security practices, ethical hacking, penetration testing, and cybersecurity careers',
+        memberCount: 0,
+        postCount: 0,
+        icon: '🔒',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now().toString() + '3',
+        name: 'WebDev',
+        displayName: 'Web Development',
+        description: 'Full-stack development, frameworks, best practices, and web technologies',
+        memberCount: 0,
+        postCount: 0,
+        icon: 'W',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now().toString() + '4',
+        name: 'DataScience',
+        displayName: 'Data Science & ML',
+        description: 'Machine learning, data analysis, AI, and data visualization',
+        memberCount: 0,
+        postCount: 0,
+        icon: '📊',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now().toString() + '5',
+        name: 'DevOps',
+        displayName: 'DevOps & Cloud',
+        description: 'CI/CD, cloud platforms, containerization, and infrastructure automation',
+        memberCount: 0,
+        postCount: 0,
+        icon: '⚙️',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now().toString() + '6',
+        name: 'Mobile',
+        displayName: 'Mobile Development',
+        description: 'iOS, Android, React Native, Flutter, and mobile app development',
+        memberCount: 0,
+        postCount: 0,
+        icon: '📱',
+        createdAt: new Date().toISOString()
+      }
+    ];
+    
+    db.communities = defaultCommunities;
+    await writeDB(db);
+    console.log('Created default communities');
+  }
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+});
+
+// Communities endpoints
+app.get('/api/communities', async (req, res) => {
+  try {
+    const db = await readDB();
+    const communities = db.communities.sort((a, b) => b.memberCount - a.memberCount);
+    
+    res.json({
+      success: true,
+      communities
+    });
+  } catch (error) {
+    console.error('Error fetching communities:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch communities' });
+  }
+});
+
+app.get('/api/communities/joined', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const userId = req.user.id;
+    
+    const userMemberships = db.communityMembers.filter(m => m.userId === userId);
+    const joinedCommunityIds = userMemberships.map(m => m.communityId);
+    
+    res.json({
+      success: true,
+      communities: joinedCommunityIds
+    });
+  } catch (error) {
+    console.error('Error fetching joined communities:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch joined communities' });
+  }
+});
+
+app.get('/api/communities/:communityName', async (req, res) => {
+  try {
+    const db = await readDB();
+    const { communityName } = req.params;
+    
+    const community = db.communities.find(c => c.name === communityName);
+    if (!community) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    res.json({
+      success: true,
+      community
+    });
+  } catch (error) {
+    console.error('Error fetching community:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch community' });
+  }
+});
+
+app.get('/api/communities/:communityName/posts', async (req, res) => {
+  try {
+    const db = await readDB();
+    const { communityName } = req.params;
+    
+    const community = db.communities.find(c => c.name === communityName);
+    if (!community) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    const communityPosts = db.posts
+      .filter(post => post.communityId === community.id)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(post => {
+        const author = db.users.find(u => u.id === post.authorId);
+        const likesCount = db.likes.filter(like => like.postId === post.id).length;
+        const commentsCount = db.comments.filter(comment => comment.postId === post.id).length;
+        
+        return {
+          ...post,
+          authorName: author ? `${author.firstName} ${author.lastName}` : 'Unknown',
+          likesCount,
+          commentsCount
+        };
+      });
+    
+    res.json({
+      success: true,
+      posts: communityPosts
+    });
+  } catch (error) {
+    console.error('Error fetching community posts:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch community posts' });
+  }
+});
+
+app.post('/api/communities/:communityId/join', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const { communityId } = req.params;
+    const userId = req.user.id;
+    
+    const community = db.communities.find(c => c.id === communityId);
+    if (!community) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    const existingMembership = db.communityMembers.find(m => 
+      m.userId === userId && m.communityId === communityId
+    );
+    
+    if (existingMembership) {
+      return res.status(400).json({ success: false, message: 'Already a member' });
+    }
+    
+    db.communityMembers.push({
+      id: Date.now().toString(),
+      userId,
+      communityId,
+      joinedAt: new Date().toISOString()
+    });
+    
+    community.memberCount += 1;
+    await writeDB(db);
+    
+    res.json({ success: true, message: 'Joined community successfully' });
+  } catch (error) {
+    console.error('Error joining community:', error);
+    res.status(500).json({ success: false, message: 'Failed to join community' });
+  }
+});
+
+app.post('/api/communities/:communityId/leave', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const { communityId } = req.params;
+    const userId = req.user.id;
+    
+    const community = db.communities.find(c => c.id === communityId);
+    if (!community) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    const membershipIndex = db.communityMembers.findIndex(m => 
+      m.userId === userId && m.communityId === communityId
+    );
+    
+    if (membershipIndex === -1) {
+      return res.status(400).json({ success: false, message: 'Not a member' });
+    }
+    
+    db.communityMembers.splice(membershipIndex, 1);
+    community.memberCount = Math.max(0, community.memberCount - 1);
+    await writeDB(db);
+    
+    res.json({ success: true, message: 'Left community successfully' });
+  } catch (error) {
+    console.error('Error leaving community:', error);
+    res.status(500).json({ success: false, message: 'Failed to leave community' });
+  }
+});
+
+app.get('/api/posts/trending', async (req, res) => {
+  try {
+    const db = await readDB();
+    const { timeframe = 'week' } = req.query;
+    
+    let dateFilter = new Date();
+    switch (timeframe) {
+      case 'day':
+        dateFilter.setDate(dateFilter.getDate() - 1);
+        break;
+      case 'week':
+        dateFilter.setDate(dateFilter.getDate() - 7);
+        break;
+      case 'month':
+        dateFilter.setMonth(dateFilter.getMonth() - 1);
+        break;
+      default:
+        dateFilter = new Date('2000-01-01'); // All time
+    }
+    
+    const trendingPosts = db.posts
+      .filter(post => new Date(post.createdAt) >= dateFilter)
+      .map(post => {
+        const author = db.users.find(u => u.id === post.authorId);
+        const community = db.communities.find(c => c.id === post.communityId);
+        const likesCount = db.likes.filter(like => like.postId === post.id).length;
+        const commentsCount = db.comments.filter(comment => comment.postId === post.id).length;
+        
+        // Calculate trending score (likes + comments * 2, with time decay)
+        const daysSincePost = (Date.now() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        const timeDecay = Math.max(0.1, 1 - (daysSincePost * 0.1));
+        const trending_score = Math.round((likesCount + commentsCount * 2) * timeDecay);
+        
+        return {
+          ...post,
+          authorName: author ? `${author.firstName} ${author.lastName}` : 'Unknown',
+          communityName: community?.name,
+          likesCount,
+          commentsCount,
+          trending_score
+        };
+      })
+      .sort((a, b) => b.trending_score - a.trending_score)
+      .slice(0, 20);
+    
+    res.json({
+      success: true,
+      posts: trendingPosts
+    });
+  } catch (error) {
+    console.error('Error fetching trending posts:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch trending posts' });
+  }
 });
