@@ -14,7 +14,7 @@
     - filter questions
     - 
 - [] fix the readme
-- [] remove fake data from the landing page
+- [x] remove fake data from the landing page
 
 # Shit for later
 - [] simple share feature
