@@ -28,7 +28,8 @@ async function initializeDB() {
       comments: [], 
       likes: [],
       commentLikes: [],
-      follows: []
+      follows: [],
+      notifications: []
     }, null, 2));
   }
 }
@@ -46,10 +47,11 @@ async function readDB() {
     if (!db.likes) db.likes = [];
     if (!db.commentLikes) db.commentLikes = [];
     if (!db.follows) db.follows = [];
+    if (!db.notifications) db.notifications = [];
     
     return db;
   } catch (error) {
-    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [] };
+    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [], notifications: [] };
   }
 }
 
@@ -1121,6 +1123,26 @@ app.get('/api/verify', authenticateToken, async (req, res) => {
 // ================= FOLLOW ENDPOINTS =================
 
 // Follow a user
+// Helper function to create a notification
+async function createNotification(type, actorId, recipientId, data = {}) {
+  const db = await readDB();
+  
+  const notification = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    type,
+    actorId,
+    recipientId,
+    data,
+    read: false,
+    createdAt: new Date().toISOString()
+  };
+  
+  db.notifications.push(notification);
+  await writeDB(db);
+  
+  return notification;
+}
+
 app.post('/api/follow/:userId', authenticateToken, async (req, res) => {
   try {
     const followerId = req.user.id;
@@ -1168,6 +1190,11 @@ app.post('/api/follow/:userId', authenticateToken, async (req, res) => {
     db.follows.push(follow);
     await writeDB(db);
 
+    // Create notification for the followed user
+    await createNotification('follow', followerId, followingId, {
+      followId: follow.id
+    });
+
     res.json({
       success: true,
       message: 'User followed successfully',
@@ -1203,7 +1230,21 @@ app.delete('/api/follow/:userId', authenticateToken, async (req, res) => {
       });
     }
 
+    const follow = db.follows[followIndex];
     db.follows.splice(followIndex, 1);
+    
+    // Remove the follow notification
+    const notificationIndex = db.notifications.findIndex(n => 
+      n.type === 'follow' && 
+      n.actorId === followerId && 
+      n.recipientId === followingId &&
+      n.data?.followId === follow.id
+    );
+    
+    if (notificationIndex !== -1) {
+      db.notifications.splice(notificationIndex, 1);
+    }
+    
     await writeDB(db);
 
     res.json({
@@ -1341,6 +1382,109 @@ app.get('/api/user/:userId/follow-counts', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+});
+
+// Notifications endpoints
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const userId = req.user.id;
+    
+    // Get notifications for the current user
+    const notifications = db.notifications
+      .filter(notification => notification.recipientId === userId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Populate actor information
+    const populatedNotifications = notifications.map(notification => {
+      const actor = db.users.find(user => user.id === notification.actorId);
+      return {
+        ...notification,
+        actor: actor ? {
+          id: actor.id,
+          name: actor.name,
+          profilePicture: actor.profilePicture
+        } : null
+      };
+    });
+    
+    res.json({
+      success: true,
+      notifications: populatedNotifications
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notifications'
+    });
+  }
+});
+
+app.patch('/api/notifications/:id/read', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const notificationId = req.params.id;
+    const userId = req.user.id;
+    
+    const notification = db.notifications.find(n => 
+      n.id === notificationId && n.recipientId === userId
+    );
+    
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+    
+    notification.read = true;
+    notification.readAt = new Date().toISOString();
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark notification as read'
+    });
+  }
+});
+
+app.patch('/api/notifications/read-all', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const userId = req.user.id;
+    
+    // Mark all unread notifications as read
+    const userNotifications = db.notifications.filter(n => 
+      n.recipientId === userId && !n.read
+    );
+    
+    userNotifications.forEach(notification => {
+      notification.read = true;
+      notification.readAt = new Date().toISOString();
+    });
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      message: 'All notifications marked as read',
+      markedCount: userNotifications.length
+    });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all notifications as read'
     });
   }
 });

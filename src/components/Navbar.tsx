@@ -8,6 +8,7 @@ import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut } f
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 
 interface NavbarProps {
   onMessagesClick?: () => void;
@@ -218,27 +219,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                 {/* Action Buttons */}
                 <div className="hidden sm:flex items-center gap-3">
                   {/* Notifications Dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="relative">
-                        <Bell className="w-4 h-4" />
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-                          1
-                        </Badge>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64">
-                      <DropdownMenuItem>
-                        <span className="text-sm">Some news</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <span className="text-sm">Another news</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <span className="text-sm">Something else here</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <NotificationsDropdown />
 
                   {/* Messages */}
                   {onMessagesClick && (
