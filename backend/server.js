@@ -26,7 +26,8 @@ async function initializeDB() {
       users: [], 
       posts: [], 
       comments: [], 
-      likes: [] 
+      likes: [],
+      commentLikes: []
     }, null, 2));
   }
 }
@@ -42,10 +43,11 @@ async function readDB() {
     if (!db.posts) db.posts = [];
     if (!db.comments) db.comments = [];
     if (!db.likes) db.likes = [];
+    if (!db.commentLikes) db.commentLikes = [];
     
     return db;
   } catch (error) {
-    return { users: [], posts: [], comments: [], likes: [] };
+    return { users: [], posts: [], comments: [], likes: [], commentLikes: [] };
   }
 }
 
@@ -726,6 +728,12 @@ app.get('/api/posts/:id/comments', authenticateToken, async (req, res) => {
     // First pass: create comment objects with author info
     const enrichedComments = comments.map(comment => {
       const author = db.users.find(user => user.id === comment.authorId);
+      
+      // Check if current user liked this comment
+      const isLiked = db.commentLikes && db.commentLikes.some(like => 
+        like.commentId === comment.id && like.userId === req.user.userId
+      );
+      
       return {
         ...comment,
         author: {
@@ -737,6 +745,7 @@ app.get('/api/posts/:id/comments', authenticateToken, async (req, res) => {
           profilePicture: author.profilePicture || null
         },
         timeAgo: getTimeAgo(comment.createdAt),
+        isLiked: isLiked || false,
         replies: []
       };
     });
@@ -913,6 +922,87 @@ app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Delete comment error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Like/unlike a comment
+app.post('/api/comments/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const commentId = req.params.id;
+    const userId = req.user.userId;
+    
+    // Check if comment exists
+    const comment = db.comments.find(c => c.id === commentId);
+    if (!comment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Comment not found' 
+      });
+    }
+    
+    // Initialize commentLikes array if it doesn't exist
+    if (!db.commentLikes) {
+      db.commentLikes = [];
+    }
+    
+    // Check if user already liked this comment
+    const existingLike = db.commentLikes.find(like => 
+      like.commentId === commentId && like.userId === userId
+    );
+    
+    let isLiked;
+    let likesCount;
+    
+    if (existingLike) {
+      // Unlike: remove the like
+      db.commentLikes = db.commentLikes.filter(like => 
+        !(like.commentId === commentId && like.userId === userId)
+      );
+      
+      // Update comment's like count
+      const commentIndex = db.comments.findIndex(c => c.id === commentId);
+      if (commentIndex !== -1) {
+        db.comments[commentIndex].likesCount = Math.max(0, db.comments[commentIndex].likesCount - 1);
+        likesCount = db.comments[commentIndex].likesCount;
+      }
+      
+      isLiked = false;
+    } else {
+      // Like: add the like
+      const newLike = {
+        id: Date.now().toString(),
+        commentId,
+        userId,
+        createdAt: new Date().toISOString()
+      };
+      
+      db.commentLikes.push(newLike);
+      
+      // Update comment's like count
+      const commentIndex = db.comments.findIndex(c => c.id === commentId);
+      if (commentIndex !== -1) {
+        db.comments[commentIndex].likesCount += 1;
+        likesCount = db.comments[commentIndex].likesCount;
+      }
+      
+      isLiked = true;
+    }
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      isLiked,
+      likesCount,
+      message: isLiked ? 'Comment liked' : 'Comment unliked'
+    });
+  } catch (error) {
+    console.error('Like comment error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 

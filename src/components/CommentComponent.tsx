@@ -25,6 +25,7 @@ interface Comment {
   likesCount: number;
   author: Author;
   timeAgo: string;
+  isLiked: boolean;
   replies: Comment[];
 }
 
@@ -33,6 +34,7 @@ interface CommentProps {
   currentUserId?: string;
   onReply: (commentId: string, content: string) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
+  onLike: (commentId: string) => Promise<{ success: boolean; isLiked: boolean; likesCount: number }>;
   depth?: number;
 }
 
@@ -41,22 +43,29 @@ export const CommentComponent: React.FC<CommentProps> = ({
   currentUserId, 
   onReply, 
   onDelete, 
+  onLike,
   depth = 0 
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReplies, setShowReplies] = useState(true);
+  const [localComment, setLocalComment] = useState(comment);
 
   const maxDepth = 5; // Maximum nesting depth for replies
   const canReply = depth < maxDepth;
+
+  // Update local comment when parent comment changes
+  React.useEffect(() => {
+    setLocalComment(comment);
+  }, [comment]);
 
   const handleReply = async () => {
     if (!replyContent.trim()) return;
 
     setIsSubmitting(true);
     try {
-      await onReply(comment.id, replyContent.trim());
+      await onReply(localComment.id, replyContent.trim());
       setReplyContent("");
       setIsReplying(false);
     } catch (error) {
@@ -68,7 +77,24 @@ export const CommentComponent: React.FC<CommentProps> = ({
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this comment?")) {
-      await onDelete(comment.id);
+      await onDelete(localComment.id);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!currentUserId) return;
+
+    try {
+      const result = await onLike(localComment.id);
+      if (result.success) {
+        setLocalComment(prev => ({
+          ...prev,
+          isLiked: result.isLiked,
+          likesCount: result.likesCount
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to like comment:', error);
     }
   };
 
@@ -82,36 +108,36 @@ export const CommentComponent: React.FC<CommentProps> = ({
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
-            {comment.author.profilePicture ? (
-              <AvatarImage src={comment.author.profilePicture} />
+            {localComment.author.profilePicture ? (
+              <AvatarImage src={localComment.author.profilePicture} />
             ) : null}
             <AvatarFallback className="bg-accent text-accent-foreground text-xs">
-              {comment.author.firstName.charAt(0)}{comment.author.lastName.charAt(0)}
+              {localComment.author.firstName.charAt(0)}{localComment.author.lastName.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-medium text-text-primary text-sm">
-                {comment.author.firstName} {comment.author.lastName}
+                {localComment.author.firstName} {localComment.author.lastName}
               </span>
               <Badge 
-                variant={comment.author.accountType === "alumni" ? "default" : "secondary"}
+                variant={localComment.author.accountType === "alumni" ? "default" : "secondary"}
                 className="text-xs"
               >
-                {comment.author.accountType === "alumni" ? "Alumni" : "Student"}
+                {localComment.author.accountType === "alumni" ? "Alumni" : "Student"}
               </Badge>
               <span className="text-xs text-text-secondary">
-                {comment.timeAgo}
+                {localComment.timeAgo}
               </span>
             </div>
             <p className="text-xs text-text-secondary">
-              {comment.author.university}
+              {localComment.author.university}
             </p>
           </div>
         </div>
         
         {/* Delete button for comment author */}
-        {currentUserId && comment.author.id === currentUserId && (
+        {currentUserId && localComment.author.id === currentUserId && (
           <Button
             variant="ghost"
             size="sm"
@@ -126,7 +152,7 @@ export const CommentComponent: React.FC<CommentProps> = ({
       {/* Comment Content */}
       <div className="mb-3">
         <p className="text-text-primary text-sm leading-relaxed whitespace-pre-wrap">
-          {comment.content}
+          {localComment.content}
         </p>
       </div>
 
@@ -135,10 +161,14 @@ export const CommentComponent: React.FC<CommentProps> = ({
         <Button 
           variant="ghost" 
           size="sm" 
-          className="text-text-secondary hover:text-red-500 h-6 px-2 text-xs"
+          onClick={handleLike}
+          disabled={!currentUserId}
+          className={`text-text-secondary hover:text-red-500 h-6 px-2 text-xs ${
+            localComment.isLiked ? 'text-red-500' : ''
+          }`}
         >
-          <Heart className="h-3 w-3 mr-1" />
-          {comment.likesCount > 0 && comment.likesCount}
+          <Heart className={`h-3 w-3 mr-1 ${localComment.isLiked ? 'fill-current' : ''}`} />
+          {localComment.likesCount > 0 && localComment.likesCount}
         </Button>
         
         {canReply && currentUserId && (
@@ -153,7 +183,7 @@ export const CommentComponent: React.FC<CommentProps> = ({
           </Button>
         )}
 
-        {comment.replies.length > 0 && (
+        {localComment.replies.length > 0 && (
           <Button 
             variant="ghost" 
             size="sm" 
@@ -163,12 +193,12 @@ export const CommentComponent: React.FC<CommentProps> = ({
             {showReplies ? (
               <>
                 <ChevronUp className="h-3 w-3 mr-1" />
-                Hide {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                Hide {localComment.replies.length} {localComment.replies.length === 1 ? 'reply' : 'replies'}
               </>
             ) : (
               <>
                 <ChevronDown className="h-3 w-3 mr-1" />
-                Show {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                Show {localComment.replies.length} {localComment.replies.length === 1 ? 'reply' : 'replies'}
               </>
             )}
           </Button>
@@ -186,7 +216,7 @@ export const CommentComponent: React.FC<CommentProps> = ({
             </Avatar>
             <div className="flex-1">
               <Textarea
-                placeholder={`Reply to ${comment.author.firstName}...`}
+                placeholder={`Reply to ${localComment.author.firstName}...`}
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 className="mb-2 text-sm"
@@ -219,15 +249,16 @@ export const CommentComponent: React.FC<CommentProps> = ({
       )}
 
       {/* Replies */}
-      {showReplies && comment.replies.length > 0 && (
+      {showReplies && localComment.replies.length > 0 && (
         <div className="space-y-2">
-          {comment.replies.map((reply) => (
+          {localComment.replies.map((reply) => (
             <CommentComponent
               key={reply.id}
               comment={reply}
               currentUserId={currentUserId}
               onReply={onReply}
               onDelete={onDelete}
+              onLike={onLike}
               depth={depth + 1}
             />
           ))}

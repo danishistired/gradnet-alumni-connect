@@ -18,7 +18,7 @@ export default function BlogDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { posts, likePost, deletePost, loading, fetchComments, addComment, deleteComment } = useBlog();
+  const { posts, likePost, deletePost, loading, fetchComments, addComment, deleteComment, likeComment } = useBlog();
   const [newComment, setNewComment] = useState("");
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -118,6 +118,16 @@ export default function BlogDetail() {
       }
     } catch (error) {
       console.error('Failed to delete comment:', error);
+    }
+  };
+
+  const handleLikeComment = async (commentId: string) => {
+    try {
+      const result = await likeComment(commentId);
+      return result;
+    } catch (error) {
+      console.error('Failed to like comment:', error);
+      return { success: false, isLiked: false, likesCount: 0 };
     }
   };
 
@@ -381,6 +391,7 @@ export default function BlogDetail() {
                         currentUserId={user?.id}
                         onReply={handleReply}
                         onDelete={handleDeleteComment}
+                        onLike={handleLikeComment}
                       />
                     ))}
                   </div>

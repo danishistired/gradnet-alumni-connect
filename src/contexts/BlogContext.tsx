@@ -21,6 +21,7 @@ interface Comment {
   likesCount: number;
   author: Author;
   timeAgo: string;
+  isLiked: boolean;
   replies: Comment[];
 }
 
@@ -79,6 +80,7 @@ interface BlogContextType {
   fetchComments: (postId: string) => Promise<Comment[]>;
   addComment: (postId: string, content: string, parentId?: string) => Promise<{ success: boolean; message: string; comment?: Comment }>;
   deleteComment: (commentId: string) => Promise<{ success: boolean; message: string }>;
+  likeComment: (commentId: string) => Promise<{ success: boolean; isLiked: boolean; likesCount: number }>;
 }
 
 const BlogContext = createContext<BlogContextType | null>(null);
@@ -324,6 +326,36 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     }
   };
 
+  const likeComment = async (commentId: string) => {
+    if (!token) {
+      return { success: false, isLiked: false, likesCount: 0 };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        return { 
+          success: true, 
+          isLiked: data.isLiked, 
+          likesCount: data.likesCount 
+        };
+      } else {
+        return { success: false, isLiked: false, likesCount: 0 };
+      }
+    } catch (error) {
+      console.error('Failed to like comment:', error);
+      return { success: false, isLiked: false, likesCount: 0 };
+    }
+  };
+
   // Fetch posts when filters change or component mounts
   useEffect(() => {
     if (token) {
@@ -345,7 +377,8 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
     refreshPosts,
     fetchComments,
     addComment,
-    deleteComment
+    deleteComment,
+    likeComment
   };
 
   return (
