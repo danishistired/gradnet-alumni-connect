@@ -123,7 +123,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           </div>
 
           {/* Center Section: Navigation Links */}
-          <div ref={navContainerRef} className="hidden md:flex items-center justify-center flex-1">
+          <div ref={navContainerRef} className="hidden md:flex items-center justify-center flex-1 absolute left-1/2 transform -translate-x-1/2">
             {/* Sliding Active Indicator - only show for non-authenticated users */}
             {!user && (
               <div 

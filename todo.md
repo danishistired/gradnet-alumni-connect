@@ -1,6 +1,6 @@
 # Shit for now
 - [x] remove Home and About 
-- [] move the search bar up to the Navbar 
+- [x] move the search bar up to the Navbar 
 - [] bring back the 
 - [] remove the cart 
 - [] tldr ai 
