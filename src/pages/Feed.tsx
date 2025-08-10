@@ -1,21 +1,23 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Heart, MessageCircle, Share2, BookmarkPlus, Search, TrendingUp, Users, GraduationCap, Briefcase, Star, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, BookmarkPlus, TrendingUp, Users, GraduationCap, Briefcase, Star, Trash2 } from "lucide-react";
 
 const Feed = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { posts, fetchPosts, likePost, deletePost, loading } = useBlog();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState("all");
+  
+  // Get search query from URL params (set by navbar)
+  const searchQuery = searchParams.get("search") || "";
 
   useEffect(() => {
     fetchPosts();
@@ -85,34 +87,23 @@ const Feed = () => {
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
           
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-text-secondary" />
-              <Input
-                placeholder="Search posts, people, or topics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {filters.map((filter) => {
-                const Icon = filter.icon;
-                return (
-                  <Button
-                    key={filter.id}
-                    variant={activeFilter === filter.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveFilter(filter.id)}
-                    className="flex items-center gap-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {filter.label}
-                  </Button>
-                );
-              })}
-            </div>
+          {/* Filters */}
+          <div className="flex gap-2 flex-wrap justify-center">
+            {filters.map((filter) => {
+              const Icon = filter.icon;
+              return (
+                <Button
+                  key={filter.id}
+                  variant={activeFilter === filter.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveFilter(filter.id)}
+                  className="flex items-center gap-2"
+                >
+                  <Icon className="h-4 w-4" />
+                  {filter.label}
+                </Button>
+              );
+            })}
           </div>
 
           {/* Empty State */}

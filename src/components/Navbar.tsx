@@ -1,10 +1,11 @@
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { User, Plus, Home, Users, Mail, Bell, ShoppingCart, Menu, Settings, LogOut } from "lucide-react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut } from "lucide-react";
+import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,13 +17,34 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchParams.get("search") || "");
   const [activeIndicator, setActiveIndicator] = useState({ left: 0, width: 0 });
   const homeRef = useRef<HTMLAnchorElement>(null);
   const aboutRef = useRef<HTMLAnchorElement>(null);
   const navContainerRef = useRef<HTMLDivElement>(null);
   
   const isActive = (path: string) => location.pathname === path;
+
+  // Update local search query when URL params change
+  useEffect(() => {
+    setLocalSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  // Handle search change
+  const handleSearchChange = (value: string) => {
+    setLocalSearchQuery(value);
+    
+    // Update URL search params
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (value.trim()) {
+      newSearchParams.set("search", value);
+    } else {
+      newSearchParams.delete("search");
+    }
+    setSearchParams(newSearchParams);
+  };
 
   // Update active indicator position
   useEffect(() => {
@@ -77,25 +99,31 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-surface border-b border-border z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="flex-shrink-0">
-            <Logo />
-          </Link>
+      <div className="w-full px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
           
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          
-          {/* Desktop Navigation */}
-          <div ref={navContainerRef} className="hidden md:flex items-center space-x-6 relative">
+          {/* Left Section: Logo + Search */}
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <Link to="/" className="flex-shrink-0">
+              <Logo />
+            </Link>
+            
+            {/* Search Bar - only show for authenticated users */}
+            {user && (
+              <div className="relative w-64 lg:w-96 hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
+                <Input
+                  placeholder="Search posts, people, or topics..."
+                  value={localSearchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 bg-surface-muted border-border focus:bg-surface"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Center Section: Navigation Links */}
+          <div ref={navContainerRef} className="hidden md:flex items-center justify-center flex-1">
             {/* Sliding Active Indicator - only show for non-authenticated users */}
             {!user && (
               <div 
@@ -109,101 +137,122 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
               />
             )}
             
-            {/* Show Home and About only for non-authenticated users */}
-            {!user && (
-              <>
-                <Link 
-                  ref={homeRef}
-                  to="/" 
-                  className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Home className="w-4 h-4" />
-                  Home
-                </Link>
-                <Link 
-                  ref={aboutRef}
-                  to="/about" 
-                  className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  About
-                </Link>
-              </>
-            )}
-            
-            {/* Show Dashboard and Network only for authenticated users */}
-            {user && (
-              <>
-                <Link 
-                  to="/feed" 
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    isActive('/feed') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Home className="w-4 h-4" />
-                  Dashboard
-                </Link>
-                <Link 
-                  to="/network" 
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    isActive('/network') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Users className="w-4 h-4" />
-                  Network
-                </Link>
-              </>
-            )}
+            <div className="flex items-center space-x-8 relative">
+              {/* Show Home and About only for non-authenticated users */}
+              {!user && (
+                <>
+                  <Link 
+                    ref={homeRef}
+                    to="/" 
+                    className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Home className="w-4 h-4" />
+                    Home
+                  </Link>
+                  <Link 
+                    ref={aboutRef}
+                    to="/about" 
+                    className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    About
+                  </Link>
+                </>
+              )}
+              
+              {/* Show Dashboard and Network only for authenticated users */}
+              {user && (
+                <>
+                  <Link 
+                    to="/feed" 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive('/feed') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Home className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/network" 
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isActive('/network') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    Network
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* Mobile menu button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden ml-auto"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
           
-          {/* Right side elements */}
-          <div className="flex items-center gap-3">
+          {/* Right Section: Actions + Profile */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             {user && (
               <>
-                {/* Shopping Cart Icon */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <ShoppingCart className="w-4 h-4" />
+                {/* Post Blog Button */}
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-accent hover:bg-accent-hover hidden lg:flex"
+                  onClick={() => navigate("/create-post")}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Post Blog
                 </Button>
 
-                {/* Notifications Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <Bell className="w-4 h-4" />
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
-                        1
-                      </Badge>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
-                    <DropdownMenuItem>
-                      <span className="text-sm">Some news</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <span className="text-sm">Another news</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <span className="text-sm">Something else here</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Action Buttons */}
+                <div className="hidden sm:flex items-center gap-3">
+                  {/* Notifications Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative">
+                        <Bell className="w-4 h-4" />
+                        <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+                          1
+                        </Badge>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuItem>
+                        <span className="text-sm">Some news</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <span className="text-sm">Another news</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <span className="text-sm">Something else here</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-                {/* Messages */}
-                {onMessagesClick && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={onMessagesClick}
-                    className="relative"
-                  >
-                    <Mail className="w-4 h-4" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
-                  </Button>
-                )}
+                  {/* Messages */}
+                  {onMessagesClick && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={onMessagesClick}
+                      className="relative"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
+                    </Button>
+                  )}
+                </div>
 
                 {/* Profile Avatar Dropdown */}
                 <DropdownMenu>
@@ -236,23 +285,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-
-                {/* Post Blog Button */}
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-accent hover:bg-accent-hover hidden sm:flex"
-                  onClick={() => navigate("/create-post")}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Post Blog
-                </Button>
               </>
             )}
             
             {/* Sign Up/Login buttons for non-authenticated users */}
             {!user && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link to="/login">
                   <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
                     Login
