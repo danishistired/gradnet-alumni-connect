@@ -27,7 +27,8 @@ async function initializeDB() {
       posts: [], 
       comments: [], 
       likes: [],
-      commentLikes: []
+      commentLikes: [],
+      follows: []
     }, null, 2));
   }
 }
@@ -44,10 +45,11 @@ async function readDB() {
     if (!db.comments) db.comments = [];
     if (!db.likes) db.likes = [];
     if (!db.commentLikes) db.commentLikes = [];
+    if (!db.follows) db.follows = [];
     
     return db;
   } catch (error) {
-    return { users: [], posts: [], comments: [], likes: [], commentLikes: [] };
+    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [] };
   }
 }
 
@@ -305,6 +307,38 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Get any user's profile by ID
+app.get('/api/user/:userId/profile', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const db = await readDB();
+    
+    const user = db.users.find(u => u.id === userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Return public profile information (excluding password)
+    const { password, ...publicProfile } = user;
+    
+    res.json({
+      success: true,
+      user: publicProfile
+    });
+    
+  } catch (error) {
+    console.error('Get user profile error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 
@@ -1080,6 +1114,233 @@ app.get('/api/verify', authenticateToken, async (req, res) => {
     res.status(401).json({ 
       success: false, 
       message: 'Invalid token' 
+    });
+  }
+});
+
+// ================= FOLLOW ENDPOINTS =================
+
+// Follow a user
+app.post('/api/follow/:userId', authenticateToken, async (req, res) => {
+  try {
+    const followerId = req.user.id;
+    const followingId = req.params.userId;
+
+    // Check if user is trying to follow themselves
+    if (followerId === followingId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot follow yourself'
+      });
+    }
+
+    const db = await readDB();
+
+    // Check if user to follow exists
+    const userToFollow = db.users.find(u => u.id === followingId);
+    if (!userToFollow) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if already following
+    const existingFollow = db.follows.find(f => 
+      f.followerId === followerId && f.followingId === followingId
+    );
+
+    if (existingFollow) {
+      return res.status(400).json({
+        success: false,
+        message: 'Already following this user'
+      });
+    }
+
+    // Create follow relationship
+    const follow = {
+      id: Date.now().toString(),
+      followerId,
+      followingId,
+      createdAt: new Date().toISOString()
+    };
+
+    db.follows.push(follow);
+    await writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'User followed successfully',
+      follow
+    });
+
+  } catch (error) {
+    console.error('Follow error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Unfollow a user
+app.delete('/api/follow/:userId', authenticateToken, async (req, res) => {
+  try {
+    const followerId = req.user.id;
+    const followingId = req.params.userId;
+
+    const db = await readDB();
+
+    // Find and remove follow relationship
+    const followIndex = db.follows.findIndex(f => 
+      f.followerId === followerId && f.followingId === followingId
+    );
+
+    if (followIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Not following this user'
+      });
+    }
+
+    db.follows.splice(followIndex, 1);
+    await writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'User unfollowed successfully'
+    });
+
+  } catch (error) {
+    console.error('Unfollow error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get user's followers
+app.get('/api/user/:userId/followers', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const db = await readDB();
+
+    // Get all followers for this user
+    const followerIds = db.follows
+      .filter(f => f.followingId === userId)
+      .map(f => f.followerId);
+
+    // Get follower details
+    const followers = db.users
+      .filter(u => followerIds.includes(u.id))
+      .map(u => ({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        profilePicture: u.profilePicture,
+        accountType: u.accountType,
+        university: u.university
+      }));
+
+    res.json({
+      success: true,
+      followers,
+      count: followers.length
+    });
+
+  } catch (error) {
+    console.error('Get followers error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get user's following
+app.get('/api/user/:userId/following', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const db = await readDB();
+
+    // Get all users this user is following
+    const followingIds = db.follows
+      .filter(f => f.followerId === userId)
+      .map(f => f.followingId);
+
+    // Get following details
+    const following = db.users
+      .filter(u => followingIds.includes(u.id))
+      .map(u => ({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        profilePicture: u.profilePicture,
+        accountType: u.accountType,
+        university: u.university
+      }));
+
+    res.json({
+      success: true,
+      following,
+      count: following.length
+    });
+
+  } catch (error) {
+    console.error('Get following error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Check if user is following another user
+app.get('/api/follow/status/:userId', authenticateToken, async (req, res) => {
+  try {
+    const followerId = req.user.id;
+    const followingId = req.params.userId;
+    const db = await readDB();
+
+    const isFollowing = db.follows.some(f => 
+      f.followerId === followerId && f.followingId === followingId
+    );
+
+    res.json({
+      success: true,
+      isFollowing
+    });
+
+  } catch (error) {
+    console.error('Follow status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get follow counts for a user
+app.get('/api/user/:userId/follow-counts', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const db = await readDB();
+
+    const followersCount = db.follows.filter(f => f.followingId === userId).length;
+    const followingCount = db.follows.filter(f => f.followerId === userId).length;
+
+    res.json({
+      success: true,
+      followersCount,
+      followingCount
+    });
+
+  } catch (error) {
+    console.error('Follow counts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 });

@@ -18,6 +18,7 @@ import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
+import { FollowProvider } from "@/contexts/FollowContext";
 import { ProtectedRoute, GuestRoute, AuthenticatedRoute, StudentRoute, AlumniRoute } from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -31,7 +32,8 @@ const App = () => {
           <Sonner />
           <AuthProvider>
             <BlogProvider>
-              <BrowserRouter>
+              <FollowProvider>
+                <BrowserRouter>
                 <Routes>
                   {/* Public routes - accessible to everyone */}
                   <Route path="/" element={<Index />} />
@@ -51,6 +53,11 @@ const App = () => {
                   
                   {/* Protected routes - require authentication */}
                   <Route path="/profile" element={
+                    <AuthenticatedRoute>
+                      <Profile />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/user/:userId" element={
                     <AuthenticatedRoute>
                       <Profile />
                     </AuthenticatedRoute>
@@ -99,6 +106,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </FollowProvider>
             </BlogProvider>
           </AuthProvider>
         </TooltipProvider>

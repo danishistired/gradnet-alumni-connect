@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/Navbar";
+import { FollowButton } from "@/components/FollowButton";
+import { FollowCountsDisplay } from "@/components/FollowCountsDisplay";
 import { 
   User, 
   Mail, 
@@ -48,11 +50,16 @@ interface UserProfile {
 const Profile = () => {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const { userId } = useParams(); // Get userId from URL params
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [newSkill, setNewSkill] = useState("");
+  
+  // Determine if viewing own profile or someone else's
+  const isOwnProfile = !userId || (user && userId === user.id);
+  const profileUserId = userId || user?.id;
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -74,12 +81,20 @@ const Profile = () => {
       navigate('/login');
       return;
     }
-    fetchProfile();
-  }, [user, navigate]);
+    if (profileUserId) {
+      fetchProfile();
+    }
+  }, [user, navigate, profileUserId]);
 
   const fetchProfile = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/profile', {
+      // Use different endpoints based on whether viewing own profile or someone else's
+      const endpoint = isOwnProfile 
+        ? 'http://localhost:5000/api/profile'
+        : `http://localhost:5000/api/user/${profileUserId}/profile`;
+        
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -89,20 +104,23 @@ const Profile = () => {
         const data = await response.json();
         if (data.success) {
           setProfile(data.user);
-          setFormData({
-            firstName: data.user.firstName,
-            lastName: data.user.lastName,
-            bio: data.user.bio || "",
-            skills: data.user.skills || [],
-            company: data.user.company || "",
-            jobTitle: data.user.jobTitle || "",
-            linkedIn: data.user.linkedIn || "",
-            github: data.user.github || "",
-            website: data.user.website || "",
-            location: data.user.location || "",
-            university: data.user.university || "",
-            graduationYear: data.user.graduationYear || ""
-          });
+          // Only set form data if it's own profile for editing
+          if (isOwnProfile) {
+            setFormData({
+              firstName: data.user.firstName,
+              lastName: data.user.lastName,
+              bio: data.user.bio || "",
+              skills: data.user.skills || [],
+              company: data.user.company || "",
+              jobTitle: data.user.jobTitle || "",
+              linkedIn: data.user.linkedIn || "",
+              github: data.user.github || "",
+              website: data.user.website || "",
+              location: data.user.location || "",
+              university: data.user.university || "",
+              graduationYear: data.user.graduationYear || ""
+            });
+          }
         }
       }
     } catch (error) {
@@ -253,16 +271,18 @@ const Profile = () => {
                           {getInitials(profile.firstName, profile.lastName)}
                         </AvatarFallback>
                       </Avatar>
-                      <label htmlFor="profile-picture" className="absolute bottom-0 right-0 bg-accent hover:bg-accent-hover text-accent-foreground p-2 rounded-full cursor-pointer transition-colors">
-                        <Camera className="h-4 w-4" />
-                        <input
-                          id="profile-picture"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProfilePictureUpload}
-                          className="hidden"
-                        />
-                      </label>
+                      {isOwnProfile && (
+                        <label htmlFor="profile-picture" className="absolute bottom-0 right-0 bg-accent hover:bg-accent-hover text-accent-foreground p-2 rounded-full cursor-pointer transition-colors">
+                          <Camera className="h-4 w-4" />
+                          <input
+                            id="profile-picture"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePictureUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
                     </div>
                     
                     <div className="text-center">
@@ -277,6 +297,21 @@ const Profile = () => {
                           {profile.jobTitle} at {profile.company}
                         </p>
                       )}
+                      
+                      {/* Follow Counts */}
+                      <div className="mt-3">
+                        <FollowCountsDisplay userId={profile.id} className="justify-center" />
+                      </div>
+                      
+                      {/* Follow Button - only show if not own profile */}
+                      <div className="mt-4">
+                        <FollowButton 
+                          userId={profile.id} 
+                          variant="default" 
+                          size="default"
+                          showIcon={true}
+                        />
+                      </div>
                     </div>
 
                     <div className="w-full space-y-2 text-sm">
@@ -332,26 +367,28 @@ const Profile = () => {
             {/* Detailed Information */}
             <div className="lg:col-span-2 space-y-6">
               
-              {/* Edit Button */}
-              <div className="flex justify-end">
-                {!isEditing ? (
-                  <Button onClick={() => setIsEditing(true)} variant="outline">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button onClick={handleCancel} variant="outline">
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
+              {/* Edit Button - only show for own profile */}
+              {isOwnProfile && (
+                <div className="flex justify-end">
+                  {!isEditing ? (
+                    <Button onClick={() => setIsEditing(true)} variant="outline">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
                     </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button onClick={handleCancel} variant="outline">
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
                     <Button onClick={handleSave} disabled={isSaving}>
                       <Save className="h-4 w-4 mr-2" />
                       {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
 
               {/* Bio Section */}
               <Card className="card-elevated">

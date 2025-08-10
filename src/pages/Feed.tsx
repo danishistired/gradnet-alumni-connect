@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FollowButton } from "@/components/FollowButton";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Heart, MessageCircle, Share2, BookmarkPlus, TrendingUp, Users, GraduationCap, Briefcase, Star, Trash2 } from "lucide-react";
@@ -161,7 +162,13 @@ const Feed = () => {
                               {post.author.firstName.charAt(0)}{post.author.lastName.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">
+                          <span 
+                            className="font-medium cursor-pointer hover:text-accent transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/user/${post.author.id}`);
+                            }}
+                          >
                             {post.author.firstName} {post.author.lastName}
                           </span>
                           <Badge 
@@ -176,6 +183,16 @@ const Feed = () => {
                           <span className="text-xs">
                             {post.author.university}
                           </span>
+                          {/* Follow Button */}
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <FollowButton 
+                              userId={post.author.id} 
+                              variant="outline" 
+                              size="sm"
+                              showIcon={false}
+                              className="ml-2 h-6 px-2 text-xs"
+                            />
+                          </div>
                         </div>
                         
                         {/* Post Actions for Author */}
