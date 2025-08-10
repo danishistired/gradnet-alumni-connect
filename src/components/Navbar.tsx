@@ -27,6 +27,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   // Update active indicator position
   useEffect(() => {
     const updateActiveIndicator = () => {
+      // Only show indicator for non-authenticated users on Home/About pages
+      if (user) {
+        setActiveIndicator({ left: 0, width: 0 });
+        return;
+      }
+      
       let activeRef = null;
       
       if (location.pathname === '/') {
@@ -58,7 +64,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
       clearTimeout(timeoutId);
       window.removeEventListener('resize', updateActiveIndicator);
     };
-  }, [location.pathname]);
+  }, [location.pathname, user]);
   
   const handleLogout = () => {
     logout();
@@ -90,37 +96,46 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           
           {/* Desktop Navigation */}
           <div ref={navContainerRef} className="hidden md:flex items-center space-x-6 relative">
-            {/* Sliding Active Indicator */}
-            <div 
-              className="absolute top-2 bottom-2 bg-accent-light rounded-lg transition-all duration-300 ease-in-out z-0 shadow-sm"
-              style={{
-                left: `${activeIndicator.left}px`,
-                width: `${activeIndicator.width}px`,
-                opacity: (isActive('/') || isActive('/about')) ? 1 : 0,
-                transform: `translateZ(0)` // Force hardware acceleration
-              }}
-            />
+            {/* Sliding Active Indicator - only show for non-authenticated users */}
+            {!user && (
+              <div 
+                className="absolute top-2 bottom-2 bg-accent-light rounded-lg transition-all duration-300 ease-in-out z-0 shadow-sm"
+                style={{
+                  left: `${activeIndicator.left}px`,
+                  width: `${activeIndicator.width}px`,
+                  opacity: (isActive('/') || isActive('/about')) ? 1 : 0,
+                  transform: `translateZ(0)` // Force hardware acceleration
+                }}
+              />
+            )}
             
-            <Link 
-              ref={homeRef}
-              to="/" 
-              className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Home className="w-4 h-4" />
-              Home
-            </Link>
-            <Link 
-              ref={aboutRef}
-              to="/about" 
-              className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              About
-            </Link>
+            {/* Show Home and About only for non-authenticated users */}
+            {!user && (
+              <>
+                <Link 
+                  ref={homeRef}
+                  to="/" 
+                  className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <Home className="w-4 h-4" />
+                  Home
+                </Link>
+                <Link 
+                  ref={aboutRef}
+                  to="/about" 
+                  className={`relative z-10 flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                    isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  About
+                </Link>
+              </>
+            )}
+            
+            {/* Show Dashboard and Network only for authenticated users */}
             {user && (
               <>
                 <Link 
@@ -252,27 +267,33 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-2">
-              <Link 
-                to="/" 
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive('/') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Home className="w-4 h-4" />
-                Home
-              </Link>
-              <Link 
-                to="/about" 
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                  isActive('/about') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                }`}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <Users className="w-4 h-4" />
-                About
-              </Link>
+              {/* Show Home and About only for non-authenticated users */}
+              {!user && (
+                <>
+                  <Link 
+                    to="/" 
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      isActive('/') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Home className="w-4 h-4" />
+                    Home
+                  </Link>
+                  <Link 
+                    to="/about" 
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      isActive('/about') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Users className="w-4 h-4" />
+                    About
+                  </Link>
+                </>
+              )}
               
+              {/* Show Dashboard and Network only for authenticated users */}
               {user && (
                 <>
                   <Link 
@@ -303,6 +324,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                 </>
               )}
               
+              {/* Show Login/Register only for non-authenticated users */}
               {!user && (
                 <div className="flex flex-col space-y-2 pt-2">
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
