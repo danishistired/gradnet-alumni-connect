@@ -1661,6 +1661,125 @@ app.get('/api/communities/:communityName/posts', async (req, res) => {
   }
 });
 
+// Check community name availability
+app.get('/api/communities/check-name/:name', async (req, res) => {
+  try {
+    const db = await readDB();
+    const { name } = req.params;
+    
+    // Check if name format is valid
+    if (!name.startsWith('g-') || name.length < 5 || name.length > 24) {
+      return res.json({
+        success: true,
+        available: false,
+        message: 'Community name must start with "g-" and be between 5-24 characters'
+      });
+    }
+    
+    // Check if name already exists
+    const existingCommunity = db.communities.find(c => c.name === name);
+    
+    res.json({
+      success: true,
+      available: !existingCommunity,
+      message: existingCommunity ? 'Community name already exists' : 'Community name is available'
+    });
+    
+  } catch (error) {
+    console.error('Error checking community name:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to check community name availability' 
+    });
+  }
+});
+
+// Create a new community
+app.post('/api/communities', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const userId = req.user.id;
+    const { name, displayName, description, icon, category } = req.body;
+    
+    // Validate required fields
+    if (!name || !description) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Community name and description are required' 
+      });
+    }
+    
+    // Check if community name already exists
+    const existingCommunity = db.communities.find(c => c.name === name);
+    if (existingCommunity) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'Community name already exists' 
+      });
+    }
+    
+    // Validate name format (should start with g- and be appropriate length)
+    if (!name.startsWith('g-') || name.length < 5 || name.length > 24) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Community name must start with "g-" and be between 5-24 characters' 
+      });
+    }
+    
+    // Create new community
+    const newCommunity = {
+      id: `community_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: name,
+      displayName: displayName || name,
+      description: description.trim(),
+      icon: icon || '💬',
+      category: category || 'general',
+      creatorId: userId,
+      memberCount: 1, // Creator is automatically a member
+      postCount: 0,
+      createdAt: new Date().toISOString(),
+      isActive: true,
+      communityType: 'public', // Default to public
+      rules: [],
+      settings: {
+        allowImages: true,
+        allowPolls: true,
+        nsfw: false,
+        moderationLevel: 'moderate'
+      }
+    };
+    
+    // Add community to database
+    db.communities.push(newCommunity);
+    
+    // Automatically join the creator to the community
+    const membership = {
+      id: `membership_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: userId,
+      communityId: newCommunity.id,
+      role: 'owner',
+      joinedAt: new Date().toISOString()
+    };
+    
+    db.communityMembers.push(membership);
+    
+    await writeDB(db);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Community created successfully',
+      community: newCommunity
+    });
+    
+  } catch (error) {
+    console.error('Error creating community:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create community' 
+    });
+  }
+});
+
 app.post('/api/communities/:communityId/join', authenticateToken, async (req, res) => {
   try {
     const db = await readDB();

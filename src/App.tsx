@@ -13,11 +13,13 @@ import CompanySelection from "./pages/CompanySelection";
 import AlumniVerification from "./pages/AlumniVerification";
 import Feed from "./pages/Feed";
 import CreatePost from "./pages/CreatePost";
+import CreateCommunity from "./pages/CreateCommunity";
 import BlogDetail from "./pages/BlogDetail";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
+import { AllCommunities } from "./pages/AllCommunities";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
@@ -85,6 +87,12 @@ const App = () => {
                           </AuthenticatedRoute>
                         } />
                         
+                        <Route path="/communities" element={
+                          <AuthenticatedRoute>
+                            <AllCommunities />
+                          </AuthenticatedRoute>
+                        } />
+                        
                         <Route path="/g/:communityName" element={
                           <AuthenticatedRoute>
                             <div className="relative w-full min-h-screen">
@@ -105,6 +113,19 @@ const App = () => {
                               <div className="w-full overflow-auto flex justify-center">
                                 <div className="w-full max-w-4xl">
                                   <CreatePost />
+                                </div>
+                              </div>
+                            </div>
+                          </AuthenticatedRoute>
+                        } />
+                        
+                        <Route path="/create-community" element={
+                          <AuthenticatedRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-4xl">
+                                  <CreateCommunity />
                                 </div>
                               </div>
                             </div>

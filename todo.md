@@ -1,7 +1,7 @@
 # Shit for now
 - [x] remove Home and About 
 - [x] move the search bar up to the Navbar 
-- [] bring back the 
+- [x] bring back the sidebar and shit
 - [x] remove the cart 
 - [] tldr ai 
 - [] admin moderation 
@@ -25,5 +25,5 @@
 - [] increase pfp size allowance
 
 # Bugs
-- [] fix where we end up when we launch the website
+- [x] fix where we end up when we launch the website
 - [] following feature bug where every user is following the user i followed with another user  

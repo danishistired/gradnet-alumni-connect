@@ -40,7 +40,7 @@ export const Sidebar = () => {
 
   const fetchCommunities = async () => {
     try {
-      const response = await fetch('/api/communities');
+      const response = await fetch('http://localhost:5000/api/communities');
       const data = await response.json();
       if (data.success) {
         setCommunities(data.communities);
@@ -53,7 +53,7 @@ export const Sidebar = () => {
   const fetchJoinedCommunities = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/communities/joined', {
+      const response = await fetch('http://localhost:5000/api/communities/joined', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -122,7 +122,7 @@ export const Sidebar = () => {
                   "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors group",
                   isActive(`/g/${community.name}`)
                     ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                    : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
                 )}
               >
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">

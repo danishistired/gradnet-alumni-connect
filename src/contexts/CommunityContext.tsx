@@ -40,7 +40,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const fetchCommunities = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/communities');
+      const response = await fetch('http://localhost:5000/api/communities');
       const data = await response.json();
       
       if (data.success) {
@@ -58,7 +58,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('/api/communities/joined', {
+      const response = await fetch('http://localhost:5000/api/communities/joined', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -74,7 +74,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const joinCommunity = async (communityId: string): Promise<boolean> => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/communities/${communityId}/join`, {
+      const response = await fetch(`http://localhost:5000/api/communities/${communityId}/join`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -98,7 +98,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const leaveCommunity = async (communityId: string): Promise<boolean> => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/communities/${communityId}/leave`, {
+      const response = await fetch(`http://localhost:5000/api/communities/${communityId}/leave`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -122,7 +122,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const createCommunity = async (data: Partial<Community>): Promise<boolean> => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/communities', {
+      const response = await fetch('http://localhost:5000/api/communities', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
