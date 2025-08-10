@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/Navbar";
 import { FollowButton } from "@/components/FollowButton";
 import { FollowCountsDisplay } from "@/components/FollowCountsDisplay";
+import { ImageCropModal } from "@/components/ImageCropModal";
 import { 
   User, 
   Mail, 
@@ -25,7 +26,9 @@ import {
   Camera,
   Save,
   Edit,
-  X
+  X,
+  Image as ImageIcon,
+  Plus
 } from "lucide-react";
 
 interface UserProfile {
@@ -37,6 +40,7 @@ interface UserProfile {
   university: string;
   graduationYear: string;
   profilePicture?: string;
+  bannerImage?: string;
   bio: string;
   skills: string[];
   company: string;
@@ -48,19 +52,22 @@ interface UserProfile {
 }
 
 const Profile = () => {
-  const { user, token } = useAuth();
   const navigate = useNavigate();
-  const { userId } = useParams(); // Get userId from URL params
+  const { userId: profileUserId } = useParams();
+  const { user, token } = useAuth();
+  const isOwnProfile = !profileUserId || profileUserId === user?.id;
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   
-  // Determine if viewing own profile or someone else's
-  const isOwnProfile = !userId || (user && userId === user.id);
-  const profileUserId = userId || user?.id;
-
+  // Image crop modal states
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState("");
+  const [cropType, setCropType] = useState<'profile' | 'banner'>('profile');
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -81,15 +88,14 @@ const Profile = () => {
       navigate('/login');
       return;
     }
-    if (profileUserId) {
+    if (profileUserId || isOwnProfile) {
       fetchProfile();
     }
-  }, [user, navigate, profileUserId]);
+  }, [user, navigate, profileUserId, isOwnProfile]);
 
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
-      // Use different endpoints based on whether viewing own profile or someone else's
       const endpoint = isOwnProfile 
         ? 'http://localhost:5000/api/profile'
         : `http://localhost:5000/api/user/${profileUserId}/profile`;
@@ -104,7 +110,6 @@ const Profile = () => {
         const data = await response.json();
         if (data.success) {
           setProfile(data.user);
-          // Only set form data if it's own profile for editing
           if (isOwnProfile) {
             setFormData({
               firstName: data.user.firstName,
@@ -193,36 +198,58 @@ const Profile = () => {
     }));
   };
 
-  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'banner') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      
-      try {
-        const response = await fetch('http://localhost:5000/api/profile/picture', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ profilePicture: base64 })
-        });
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size must be less than 2MB');
+      return;
+    }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && profile) {
-            setProfile({ ...profile, profilePicture: data.profilePicture });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to upload profile picture:', error);
-      }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setCropImageSrc(result);
+      setCropType(type);
+      setShowCropModal(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    try {
+      const endpoint = cropType === 'profile' 
+        ? 'http://localhost:5000/api/profile/picture'
+        : 'http://localhost:5000/api/profile/banner';
+      
+      const body = cropType === 'profile' 
+        ? { profilePicture: croppedImageUrl }
+        : { bannerImage: croppedImageUrl };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && profile) {
+          if (cropType === 'profile') {
+            setProfile({ ...profile, profilePicture: data.profilePicture });
+          } else {
+            setProfile({ ...profile, bannerImage: data.bannerImage });
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to upload ${cropType} image:`, error);
+    }
   };
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -257,372 +284,328 @@ const Profile = () => {
       
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Banner and Profile Picture Section */}
+          <Card className="mb-6 overflow-hidden">
+            {/* Banner */}
+            <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+              {profile.bannerImage && (
+                <img 
+                  src={profile.bannerImage} 
+                  alt="Banner" 
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {isOwnProfile && (
+                <label className="absolute top-4 right-4 bg-white/80 hover:bg-white text-gray-700 p-2 rounded-full cursor-pointer transition-colors">
+                  <Camera className="h-4 w-4" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e, 'banner')}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
             
-            {/* Profile Picture & Basic Info */}
-            <div className="lg:col-span-1">
-              <Card className="card-elevated">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="relative">
-                      <Avatar className="h-32 w-32">
-                        <AvatarImage src={profile.profilePicture || undefined} />
-                        <AvatarFallback className="bg-accent text-accent-foreground text-2xl">
-                          {getInitials(profile.firstName, profile.lastName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {isOwnProfile && (
-                        <label htmlFor="profile-picture" className="absolute bottom-0 right-0 bg-accent hover:bg-accent-hover text-accent-foreground p-2 rounded-full cursor-pointer transition-colors">
-                          <Camera className="h-4 w-4" />
-                          <input
-                            id="profile-picture"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleProfilePictureUpload}
-                            className="hidden"
-                          />
-                        </label>
-                      )}
-                    </div>
-                    
-                    <div className="text-center">
-                      <h1 className="text-2xl font-bold text-text-primary">
-                        {profile.firstName} {profile.lastName}
-                      </h1>
-                      <p className="text-text-secondary">
-                        {profile.accountType === 'student' ? 'Student' : 'Alumni'}
+            {/* Profile Info */}
+            <CardContent className="relative pt-0 pb-6">
+              {/* Profile Picture */}
+              <div className="relative -mt-16 mb-4 flex justify-start ml-6">
+                <div className="relative">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                    <AvatarImage src={profile.profilePicture || undefined} />
+                    <AvatarFallback className="bg-accent text-accent-foreground text-2xl">
+                      {getInitials(profile.firstName, profile.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isOwnProfile && (
+                    <label className="absolute bottom-0 right-0 bg-accent hover:bg-accent-hover text-accent-foreground p-2 rounded-full cursor-pointer transition-colors">
+                      <Camera className="h-4 w-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'profile')}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+              
+              {/* Basic Info */}
+              <div className="px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-text-primary mb-1">
+                      {profile.firstName} {profile.lastName}
+                    </h1>
+                    <p className="text-lg text-text-secondary mb-2">
+                      {profile.jobTitle || (profile.accountType === 'student' ? 'Student' : 'Alumni')}
+                      {profile.company && ` at ${profile.company}`}
+                    </p>
+                    {profile.location && (
+                      <p className="text-sm text-text-secondary flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {profile.location}
                       </p>
-                      {profile.jobTitle && profile.company && (
-                        <p className="text-sm text-text-secondary mt-1">
-                          {profile.jobTitle} at {profile.company}
-                        </p>
-                      )}
-                      
-                      {/* Follow Counts */}
-                      <div className="mt-3">
-                        <FollowCountsDisplay userId={profile.id} className="justify-center" />
-                      </div>
-                      
-                      {/* Follow Button - only show if not own profile */}
-                      <div className="mt-4">
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col sm:items-end gap-3 mt-4 sm:mt-0">
+                    {/* Follow Counts */}
+                    <FollowCountsDisplay userId={profile.id} />
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {isOwnProfile ? (
+                        <Button 
+                          onClick={() => setIsEditing(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Profile
+                        </Button>
+                      ) : (
                         <FollowButton 
                           userId={profile.id} 
                           variant="default" 
-                          size="default"
+                          size="sm"
                           showIcon={true}
                         />
-                      </div>
-                    </div>
-
-                    <div className="w-full space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-text-secondary" />
-                        <span className="text-text-secondary">{profile.email}</span>
-                      </div>
-                      {profile.university && (
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-text-secondary" />
-                          <span className="text-text-secondary">{profile.university}</span>
-                        </div>
-                      )}
-                      {profile.graduationYear && (
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-text-secondary" />
-                          <span className="text-text-secondary">Class of {profile.graduationYear}</span>
-                        </div>
-                      )}
-                      {profile.location && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-text-secondary" />
-                          <span className="text-text-secondary">{profile.location}</span>
-                        </div>
                       )}
                     </div>
-
-                    {/* Social Links */}
-                    {(profile.linkedIn || profile.github || profile.website) && (
-                      <div className="flex gap-2">
-                        {profile.linkedIn && (
-                          <a href={profile.linkedIn} target="_blank" rel="noopener noreferrer" className="p-2 bg-surface-muted hover:bg-accent-light rounded-full transition-colors">
-                            <Linkedin className="h-4 w-4" />
-                          </a>
-                        )}
-                        {profile.github && (
-                          <a href={profile.github} target="_blank" rel="noopener noreferrer" className="p-2 bg-surface-muted hover:bg-accent-light rounded-full transition-colors">
-                            <Github className="h-4 w-4" />
-                          </a>
-                        )}
-                        {profile.website && (
-                          <a href={profile.website} target="_blank" rel="noopener noreferrer" className="p-2 bg-surface-muted hover:bg-accent-light rounded-full transition-colors">
-                            <Globe className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                    )}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Detailed Information */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Edit Button - only show for own profile */}
-              {isOwnProfile && (
-                <div className="flex justify-end">
-                  {!isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} variant="outline">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button onClick={handleCancel} variant="outline">
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
+                </div>
+                
+                {/* Bio */}
+                {profile.bio && (
+                  <div className="mb-4">
+                    <p className="text-text-primary">{profile.bio}</p>
                   </div>
                 )}
+                
+                {/* University Info */}
+                <div className="flex flex-wrap gap-4 text-sm text-text-secondary mb-4">
+                  <div className="flex items-center gap-1">
+                    <Building className="h-4 w-4" />
+                    {profile.university}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Class of {profile.graduationYear}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    {profile.accountType === 'student' ? 'Student' : 'Alumni'}
+                  </div>
                 </div>
-              )}
-
-              {/* Bio Section */}
-              <Card className="card-elevated">
-                <CardHeader>
-                  <CardTitle>About</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isEditing ? (
-                    <Textarea
-                      placeholder="Tell us about yourself..."
-                      value={formData.bio}
-                      onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                      rows={4}
-                    />
-                  ) : (
-                    <p className="text-text-secondary">
-                      {profile.bio || "No bio available yet."}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Skills Section */}
-              <Card className="card-elevated">
-                <CardHeader>
-                  <CardTitle>Skills</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Add a skill"
-                          value={newSkill}
-                          onChange={(e) => setNewSkill(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                        />
-                        <Button onClick={addSkill}>Add</Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="cursor-pointer" onClick={() => removeSkill(skill)}>
-                            {skill} <X className="h-3 w-3 ml-1" />
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
+                
+                {/* Skills */}
+                {profile.skills && profile.skills.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-text-primary mb-2">Skills</h3>
                     <div className="flex flex-wrap gap-2">
-                      {profile.skills && profile.skills.length > 0 ? (
-                        profile.skills.map((skill, index) => (
-                          <Badge key={index} variant="secondary">{skill}</Badge>
-                        ))
-                      ) : (
-                        <p className="text-text-secondary">No skills added yet.</p>
-                      )}
+                      {profile.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
                     </div>
+                  </div>
+                )}
+                
+                {/* Social Links */}
+                <div className="flex gap-3">
+                  {profile.linkedIn && (
+                    <a 
+                      href={profile.linkedIn.startsWith('http') ? profile.linkedIn : `https://${profile.linkedIn}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-text-secondary hover:text-accent transition-colors"
+                    >
+                      <Linkedin className="h-5 w-5" />
+                    </a>
                   )}
-                </CardContent>
-              </Card>
+                  {profile.github && (
+                    <a 
+                      href={profile.github.startsWith('http') ? profile.github : `https://${profile.github}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-text-secondary hover:text-accent transition-colors"
+                    >
+                      <Github className="h-5 w-5" />
+                    </a>
+                  )}
+                  {profile.website && (
+                    <a 
+                      href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-text-secondary hover:text-accent transition-colors"
+                    >
+                      <Globe className="h-5 w-5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-              {/* Personal Information */}
-              <Card className="card-elevated">
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={formData.firstName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          value={formData.lastName}
-                          onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="university">University</Label>
-                        <Input
-                          id="university"
-                          value={formData.university}
-                          onChange={(e) => setFormData(prev => ({ ...prev, university: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="graduationYear">Graduation Year</Label>
-                        <Input
-                          id="graduationYear"
-                          value={formData.graduationYear}
-                          onChange={(e) => setFormData(prev => ({ ...prev, graduationYear: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          placeholder="City, Country"
-                          value={formData.location}
-                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        />
-                      </div>
-                      {profile.accountType === 'alumni' && (
-                        <>
-                          <div>
-                            <Label htmlFor="company">Company</Label>
-                            <Input
-                              id="company"
-                              value={formData.company}
-                              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="jobTitle">Job Title</Label>
-                            <Input
-                              id="jobTitle"
-                              value={formData.jobTitle}
-                              onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="font-medium text-text-primary">University</p>
-                        <p className="text-text-secondary">{profile.university || 'Not specified'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-text-primary">Graduation Year</p>
-                        <p className="text-text-secondary">{profile.graduationYear || 'Not specified'}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-text-primary">Location</p>
-                        <p className="text-text-secondary">{profile.location || 'Not specified'}</p>
-                      </div>
-                      {profile.accountType === 'alumni' && (
-                        <>
-                          <div>
-                            <p className="font-medium text-text-primary">Company</p>
-                            <p className="text-text-secondary">{profile.company || 'Not specified'}</p>
-                          </div>
-                          <div>
-                            <p className="font-medium text-text-primary">Job Title</p>
-                            <p className="text-text-secondary">{profile.jobTitle || 'Not specified'}</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+          {/* Edit Profile Section */}
+          {isOwnProfile && isEditing && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit Profile</CardTitle>
+                <CardDescription>Update your profile information</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="Enter your first name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Enter your last name"
+                    />
+                  </div>
+                </div>
 
-              {/* Social Links */}
-              <Card className="card-elevated">
-                <CardHeader>
-                  <CardTitle>Social Links</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isEditing ? (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="linkedIn">LinkedIn Profile</Label>
-                        <Input
-                          id="linkedIn"
-                          placeholder="https://linkedin.com/in/yourprofile"
-                          value={formData.linkedIn}
-                          onChange={(e) => setFormData(prev => ({ ...prev, linkedIn: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="github">GitHub Profile</Label>
-                        <Input
-                          id="github"
-                          placeholder="https://github.com/yourusername"
-                          value={formData.github}
-                          onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="website">Personal Website</Label>
-                        <Input
-                          id="website"
-                          placeholder="https://yourwebsite.com"
-                          value={formData.website}
-                          onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                        />
-                      </div>
+                <div>
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Tell us about yourself..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Input
+                      id="jobTitle"
+                      value={formData.jobTitle}
+                      onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                      placeholder="Your job title"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="company">Company</Label>
+                    <Input
+                      id="company"
+                      value={formData.company}
+                      onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                      placeholder="Your company"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="Your location"
+                  />
+                </div>
+
+                {/* Skills Section */}
+                <div>
+                  <Label>Skills</Label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        placeholder="Add a skill"
+                        onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                      />
+                      <Button type="button" onClick={addSkill} variant="outline" size="sm">
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {profile.linkedIn && (
-                        <div className="flex items-center gap-2">
-                          <Linkedin className="h-4 w-4 text-text-secondary" />
-                          <a href={profile.linkedIn} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
-                            LinkedIn Profile
-                          </a>
-                        </div>
-                      )}
-                      {profile.github && (
-                        <div className="flex items-center gap-2">
-                          <Github className="h-4 w-4 text-text-secondary" />
-                          <a href={profile.github} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
-                            GitHub Profile
-                          </a>
-                        </div>
-                      )}
-                      {profile.website && (
-                        <div className="flex items-center gap-2">
-                          <Globe className="h-4 w-4 text-text-secondary" />
-                          <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
-                            Personal Website
-                          </a>
-                        </div>
-                      )}
-                      {!profile.linkedIn && !profile.github && !profile.website && (
-                        <p className="text-text-secondary">No social links added yet.</p>
-                      )}
+                    <div className="flex flex-wrap gap-2">
+                      {formData.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="cursor-pointer" onClick={() => removeSkill(skill)}>
+                          {skill} <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="linkedIn">LinkedIn</Label>
+                    <Input
+                      id="linkedIn"
+                      value={formData.linkedIn}
+                      onChange={(e) => setFormData(prev => ({ ...prev, linkedIn: e.target.value }))}
+                      placeholder="LinkedIn profile URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="github">GitHub</Label>
+                    <Input
+                      id="github"
+                      value={formData.github}
+                      onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
+                      placeholder="GitHub profile URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={formData.website}
+                      onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                      placeholder="Personal website URL"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button onClick={handleCancel} variant="outline">
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
+
+        {/* Image Crop Modal */}
+        <ImageCropModal
+          isOpen={showCropModal}
+          onClose={() => setShowCropModal(false)}
+          onCropComplete={handleCropComplete}
+          src={cropImageSrc}
+          aspectRatio={cropType === 'profile' ? 1 : 16/9}
+          cropShape={cropType === 'profile' ? 'round' : 'rect'}
+          title={cropType === 'profile' ? 'Crop Profile Picture' : 'Crop Banner Image'}
+        />
       </div>
     </div>
   );

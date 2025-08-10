@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 interface Author {
@@ -112,7 +112,7 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
 
   const API_BASE_URL = 'http://localhost:5000/api';
 
-  const fetchPosts = async (page = 1) => {
+  const fetchPosts = useCallback(async (page = 1) => {
     if (!token) return;
     
     setLoading(true);
@@ -125,6 +125,8 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
         sortBy: filters.sortBy
       });
 
+      console.log('Fetching posts for page:', page, 'URL:', `${API_BASE_URL}/posts?${params}`);
+
       const response = await fetch(`${API_BASE_URL}/posts?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -133,22 +135,28 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Posts API response:', data);
+        
         if (data.success) {
           if (page === 1) {
             setPosts(data.posts);
           } else {
             setPosts(prev => [...prev, ...data.posts]);
           }
-          setTotalPages(data.totalPages);
-          setCurrentPage(data.currentPage);
+          setTotalPages(data.totalPages || 1);
+          setCurrentPage(data.currentPage || page);
+        } else {
+          console.error('API returned success: false', data);
         }
+      } else {
+        console.error('API response not ok:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, filters]);
 
   const createPost = async (postData: CreatePostData) => {
     if (!token) {

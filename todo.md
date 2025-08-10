@@ -4,9 +4,7 @@
 - [x] bring back the sidebar and shit
 - [x] remove the cart 
 - [] tldr ai 
-- [] admin moderation 
 - [x] add regex function to check for valid emails 
-- [] network tab (recomment people with the same skills)
 - [x] connect/follow feature
 - [] add data flow diagrams in the ppt (excalidraw)
 - [] footer
@@ -27,3 +25,7 @@
 # Bugs
 - [x] fix where we end up when we launch the website
 - [] following feature bug where every user is following the user i followed with another user  
+
+# Hackathon Day 1 ToDo
+- [] admin moderation 
+- [] network tab (recomment people with the same skills)

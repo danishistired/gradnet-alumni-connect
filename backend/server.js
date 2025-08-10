@@ -11,7 +11,8 @@ const JWT_SECRET = 'your-super-secret-jwt-key'; // In production, use environmen
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased limit for image uploads
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Database file path (using JSON file for simplicity)
 const DB_FILE = path.join(__dirname, 'database.json');
@@ -466,6 +467,48 @@ app.post('/api/profile/picture', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile picture error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Update banner image
+app.post('/api/profile/banner', authenticateToken, async (req, res) => {
+  try {
+    const { bannerImage } = req.body;
+
+    if (!bannerImage) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Banner image data is required' 
+      });
+    }
+
+    const db = await readDB();
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+
+    if (userIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Update banner image
+    db.users[userIndex].bannerImage = bannerImage;
+    db.users[userIndex].updatedAt = new Date().toISOString();
+
+    await writeDB(db);
+
+    res.json({
+      success: true,
+      message: 'Banner image updated successfully',
+      bannerImage: bannerImage
+    });
+  } catch (error) {
+    console.error('Update banner image error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 
@@ -1850,35 +1893,16 @@ app.post('/api/communities/:communityId/leave', authenticateToken, async (req, r
 app.get('/api/posts/trending', async (req, res) => {
   try {
     const db = await readDB();
-    const { timeframe = 'week' } = req.query;
-    
-    let dateFilter = new Date();
-    switch (timeframe) {
-      case 'day':
-        dateFilter.setDate(dateFilter.getDate() - 1);
-        break;
-      case 'week':
-        dateFilter.setDate(dateFilter.getDate() - 7);
-        break;
-      case 'month':
-        dateFilter.setMonth(dateFilter.getMonth() - 1);
-        break;
-      default:
-        dateFilter = new Date('2000-01-01'); // All time
-    }
     
     const trendingPosts = db.posts
-      .filter(post => new Date(post.createdAt) >= dateFilter)
       .map(post => {
         const author = db.users.find(u => u.id === post.authorId);
         const community = db.communities.find(c => c.id === post.communityId);
         const likesCount = db.likes.filter(like => like.postId === post.id).length;
         const commentsCount = db.comments.filter(comment => comment.postId === post.id).length;
         
-        // Calculate trending score (likes + comments * 2, with time decay)
-        const daysSincePost = (Date.now() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60 * 24);
-        const timeDecay = Math.max(0.1, 1 - (daysSincePost * 0.1));
-        const trending_score = Math.round((likesCount + commentsCount * 2) * timeDecay);
+        // Simple engagement score: likes + comments
+        const trending_score = likesCount + commentsCount;
         
         return {
           ...post,
@@ -1889,8 +1913,7 @@ app.get('/api/posts/trending', async (req, res) => {
           trending_score
         };
       })
-      .sort((a, b) => b.trending_score - a.trending_score)
-      .slice(0, 20);
+      .sort((a, b) => b.trending_score - a.trending_score); // Sort by engagement descending
     
     res.json({
       success: true,

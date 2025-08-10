@@ -23,16 +23,15 @@ interface TrendingPost {
 export const Trending = () => {
   const [posts, setPosts] = useState<TrendingPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'all'>('week');
 
   useEffect(() => {
     fetchTrendingPosts();
-  }, [timeframe]);
+  }, []);
 
   const fetchTrendingPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/posts/trending?timeframe=${timeframe}`);
+      const response = await fetch(`http://localhost:5000/api/posts/trending`);
       const data = await response.json();
       
       if (data.success) {
@@ -49,13 +48,6 @@ export const Trending = () => {
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength) + '...';
   };
-
-  const timeframes = [
-    { key: 'day', label: 'Today' },
-    { key: 'week', label: 'This Week' },
-    { key: 'month', label: 'This Month' },
-    { key: 'all', label: 'All Time' }
-  ];
 
   if (loading) {
     return (
@@ -75,20 +67,7 @@ export const Trending = () => {
       <div className="flex items-center gap-3 mb-6">
         <TrendingUp className="w-6 h-6 text-orange-500" />
         <h1 className="text-2xl font-bold">Trending Posts</h1>
-      </div>
-
-      {/* Timeframe Filter */}
-      <div className="flex gap-2 mb-6">
-        {timeframes.map(({ key, label }) => (
-          <Button
-            key={key}
-            variant={timeframe === key ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTimeframe(key as any)}
-          >
-            {label}
-          </Button>
-        ))}
+        <p className="text-muted-foreground ml-4">Sorted by engagement (likes + comments)</p>
       </div>
 
       {/* Trending Posts */}
@@ -142,7 +121,7 @@ export const Trending = () => {
               </CardHeader>
 
               <CardContent>
-                <Link to={`/post/${post.id}`} className="block group">
+                <Link to={`/blog/${post.id}`} className="block group">
                   <h3 className="text-lg font-semibold mb-2 group-hover:text-accent transition-colors">
                     {post.title}
                   </h3>

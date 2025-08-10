@@ -13,7 +13,7 @@ import { Heart, MessageCircle, Share2, BookmarkPlus, TrendingUp, Users, Graduati
 const Feed = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { posts, fetchPosts, likePost, deletePost, loading } = useBlog();
+  const { posts, fetchPosts, likePost, deletePost, loading, totalPages, currentPage } = useBlog();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilter, setActiveFilter] = useState("all");
   
@@ -22,7 +22,22 @@ const Feed = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [fetchPosts]);
+  }, []); // Remove fetchPosts from dependencies since it's now memoized
+
+  const handleLoadMore = async () => {
+    console.log('Load More clicked. Current page:', currentPage, 'Total pages:', totalPages, 'Loading:', loading);
+    if (currentPage < totalPages && !loading) {
+      console.log('Fetching next page:', currentPage + 1);
+      try {
+        await fetchPosts(currentPage + 1);
+        console.log('Fetch completed');
+      } catch (error) {
+        console.error('Load more error:', error);
+      }
+    } else {
+      console.log('Cannot load more - currentPage:', currentPage, 'totalPages:', totalPages, 'loading:', loading);
+    }
+  };
 
   const filters = [
     { id: "all", label: "All Posts", icon: Users },
@@ -261,10 +276,15 @@ const Feed = () => {
           </div>
 
           {/* Load More */}
-          {filteredPosts.length > 0 && (
+          {filteredPosts.length > 0 && currentPage < totalPages && (
             <div className="text-center">
-              <Button variant="outline" className="w-full sm:w-auto">
-                Load More Posts
+              <Button 
+                variant="outline" 
+                className="w-full sm:w-auto"
+                onClick={handleLoadMore}
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Load More Posts"}
               </Button>
             </div>
           )}
