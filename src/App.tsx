@@ -61,10 +61,12 @@ const App = () => {
                         {/* Protected routes with sidebar */}
                         <Route path="/feed" element={
                           <AuthenticatedRoute>
-                            <div className="flex w-full min-h-screen">
+                            <div className="relative w-full min-h-screen">
                               <Sidebar />
-                              <div className="flex-1 ml-64 overflow-auto">
-                                <Feed />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-4xl">
+                                  <Feed />
+                                </div>
                               </div>
                             </div>
                           </AuthenticatedRoute>
@@ -72,10 +74,12 @@ const App = () => {
                         
                         <Route path="/trending" element={
                           <AuthenticatedRoute>
-                            <div className="flex w-full min-h-screen">
+                            <div className="relative w-full min-h-screen">
                               <Sidebar />
-                              <div className="flex-1 ml-64 overflow-auto">
-                                <Trending />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-4xl">
+                                  <Trending />
+                                </div>
                               </div>
                             </div>
                           </AuthenticatedRoute>
@@ -83,10 +87,12 @@ const App = () => {
                         
                         <Route path="/g/:communityName" element={
                           <AuthenticatedRoute>
-                            <div className="flex w-full min-h-screen">
+                            <div className="relative w-full min-h-screen">
                               <Sidebar />
-                              <div className="flex-1 ml-64 overflow-auto">
-                                <CommunityPage />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-6xl">
+                                  <CommunityPage />
+                                </div>
                               </div>
                             </div>
                           </AuthenticatedRoute>
@@ -94,10 +100,12 @@ const App = () => {
                         
                         <Route path="/create-post" element={
                           <AuthenticatedRoute>
-                            <div className="flex w-full min-h-screen">
+                            <div className="relative w-full min-h-screen">
                               <Sidebar />
-                              <div className="flex-1 ml-64 overflow-auto">
-                                <CreatePost />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-4xl">
+                                  <CreatePost />
+                                </div>
                               </div>
                             </div>
                           </AuthenticatedRoute>
@@ -105,10 +113,12 @@ const App = () => {
                         
                         <Route path="/blog/:id" element={
                           <AuthenticatedRoute>
-                            <div className="flex w-full min-h-screen">
+                            <div className="relative w-full min-h-screen">
                               <Sidebar />
-                              <div className="flex-1 ml-64 overflow-auto">
-                                <BlogDetail />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-4xl">
+                                  <BlogDetail />
+                                </div>
                               </div>
                             </div>
                           </AuthenticatedRoute>
