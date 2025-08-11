@@ -29,3 +29,4 @@
 # Hackathon Day 1 ToDo
 - [] admin moderation 
 - [] network tab (recomment people with the same skills)
+- [] remove domain selection

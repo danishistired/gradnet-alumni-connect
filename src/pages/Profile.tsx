@@ -13,6 +13,7 @@ import { Navbar } from "@/components/Navbar";
 import { FollowButton } from "@/components/FollowButton";
 import { FollowCountsDisplay } from "@/components/FollowCountsDisplay";
 import { ImageCropModal } from "@/components/ImageCropModal";
+import { MessagesDialog } from "@/components/MessagesDialog";
 import { 
   User, 
   Mail, 
@@ -28,7 +29,8 @@ import {
   Edit,
   X,
   Image as ImageIcon,
-  Plus
+  Plus,
+  MessageSquare
 } from "lucide-react";
 
 interface UserProfile {
@@ -67,6 +69,9 @@ const Profile = () => {
   const [showCropModal, setShowCropModal] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState("");
   const [cropType, setCropType] = useState<'profile' | 'banner'>('profile');
+  
+  // Chat dialog state
+  const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -368,12 +373,22 @@ const Profile = () => {
                           Edit Profile
                         </Button>
                       ) : (
-                        <FollowButton 
-                          userId={profile.id} 
-                          variant="default" 
-                          size="sm"
-                          showIcon={true}
-                        />
+                        <>
+                          <FollowButton 
+                            userId={profile.id} 
+                            variant="default" 
+                            size="sm"
+                            showIcon={true}
+                          />
+                          <Button 
+                            onClick={() => setShowMessagesDialog(true)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Message
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -605,6 +620,12 @@ const Profile = () => {
           aspectRatio={cropType === 'profile' ? 1 : 16/9}
           cropShape={cropType === 'profile' ? 'round' : 'rect'}
           title={cropType === 'profile' ? 'Crop Profile Picture' : 'Crop Banner Image'}
+        />
+
+        {/* Messages Dialog */}
+        <MessagesDialog
+          open={showMessagesDialog}
+          onOpenChange={setShowMessagesDialog}
         />
       </div>
     </div>
