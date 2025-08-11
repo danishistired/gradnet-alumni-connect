@@ -32,7 +32,10 @@ async function initializeDB() {
       follows: [],
       notifications: [],
       communities: [],
-      communityMembers: []
+      communityMembers: [],
+      questions: [],
+      answers: [],
+      helpfulMarks: []
     }, null, 2));
   }
 }
@@ -196,6 +199,109 @@ app.post('/api/register', async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Prospective Student Registration endpoint
+app.post('/api/auth/register-prospective', async (req, res) => {
+  try {
+    const { 
+      firstName, 
+      lastName, 
+      email, 
+      password, 
+      currentSchool,
+      interestedProgram
+    } = req.body;
+
+    // Validation
+    if (!firstName || !lastName || !email || !password || !currentSchool || !interestedProgram) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'All fields are required' 
+      });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please enter a valid email address'
+      });
+    }
+
+    // Password validation
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password must be at least 6 characters long' 
+      });
+    }
+
+    const db = await readDB();
+
+    // Check if user already exists
+    const existingUser = db.users.find(user => user.email === email);
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'User with this email already exists' 
+      });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new prospective student user
+    const newUser = {
+      id: Date.now().toString(),
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      accountType: 'prospective',
+      currentSchool,
+      interestedProgram,
+      profilePicture: null,
+      bio: '',
+      location: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    db.users.push(newUser);
+    await writeDB(db);
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: newUser.id, email: newUser.email, accountType: newUser.accountType },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Prospective student registered successfully',
+      token,
+      user: {
+        id: newUser.id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        accountType: newUser.accountType,
+        currentSchool: newUser.currentSchool,
+        interestedProgram: newUser.interestedProgram,
+        profilePicture: newUser.profilePicture
+      }
+    });
+
+  } catch (error) {
+    console.error('Prospective student registration error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Internal server error' 
@@ -1609,6 +1715,249 @@ initializeDB().then(async () => {
     await writeDB(db);
     console.log('Created default communities');
   }
+
+  // Prospective Questions Q&A Endpoints
+
+  // Get all questions
+  app.get('/api/prospective/questions', async (req, res) => {
+    try {
+      const db = await readDB();
+      
+      if (!db.questions) db.questions = [];
+      if (!db.answers) db.answers = [];
+      
+      const questions = db.questions.map(question => {
+        const askedBy = db.users.find(u => u.id === question.askedById);
+        const questionAnswers = db.answers
+          .filter(answer => answer.questionId === question.id)
+          .map(answer => {
+            const answeredBy = db.users.find(u => u.id === answer.answeredById);
+            return {
+              ...answer,
+              answeredBy: answeredBy ? {
+                id: answeredBy.id,
+                firstName: answeredBy.firstName,
+                lastName: answeredBy.lastName,
+                accountType: answeredBy.accountType,
+                university: answeredBy.university,
+                graduationYear: answeredBy.graduationYear
+              } : null
+            };
+          })
+          .filter(answer => answer.answeredBy);
+        
+        return {
+          ...question,
+          askedBy: askedBy ? {
+            id: askedBy.id,
+            firstName: askedBy.firstName,
+            lastName: askedBy.lastName,
+            accountType: askedBy.accountType,
+            currentSchool: askedBy.currentSchool
+          } : null,
+          answers: questionAnswers
+        };
+      })
+      .filter(question => question.askedBy)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      res.json({
+        success: true,
+        questions
+      });
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch questions' });
+    }
+  });
+
+  // Ask a question
+  app.post('/api/prospective/questions', authenticateToken, async (req, res) => {
+    try {
+      const { title, content, category } = req.body;
+      const userId = req.user.userId;
+      
+      if (!title || !content || !category) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Title, content, and category are required' 
+        });
+      }
+      
+      const db = await readDB();
+      if (!db.questions) db.questions = [];
+      
+      const newQuestion = {
+        id: `question_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title,
+        content,
+        category,
+        askedById: userId,
+        createdAt: new Date().toISOString(),
+        isResolved: false
+      };
+      
+      db.questions.push(newQuestion);
+      await writeDB(db);
+      
+      console.log('Looking for user with ID:', userId);
+      console.log('Total users in DB:', db.users.length);
+      
+      // Get the question with user info for response
+      const askedBy = db.users.find(u => u.id === userId);
+      console.log('Found user:', askedBy);
+      
+      if (!askedBy) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'User not found' 
+        });
+      }
+      
+      const questionWithUser = {
+        ...newQuestion,
+        askedBy: {
+          id: askedBy.id,
+          firstName: askedBy.firstName,
+          lastName: askedBy.lastName,
+          accountType: askedBy.accountType,
+          currentSchool: askedBy.currentSchool || null
+        },
+        answers: []
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Question posted successfully',
+        question: questionWithUser
+      });
+    } catch (error) {
+      console.error('Error posting question:', error);
+      res.status(500).json({ success: false, message: 'Failed to post question' });
+    }
+  });
+
+  // Answer a question
+  app.post('/api/prospective/questions/:questionId/answers', authenticateToken, async (req, res) => {
+    try {
+      const { questionId } = req.params;
+      const { content } = req.body;
+      const userId = req.user.userId;
+      
+      if (!content) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Answer content is required' 
+        });
+      }
+      
+      const db = await readDB();
+      if (!db.questions) db.questions = [];
+      if (!db.answers) db.answers = [];
+      
+      const question = db.questions.find(q => q.id === questionId);
+      if (!question) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Question not found' 
+        });
+      }
+      
+      // Only students and alumni can answer
+      const user = db.users.find(u => u.id === userId);
+      if (!user || (user.accountType !== 'student' && user.accountType !== 'alumni')) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Only students and alumni can answer questions' 
+        });
+      }
+      
+      const newAnswer = {
+        id: `answer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        questionId,
+        content,
+        answeredById: userId,
+        createdAt: new Date().toISOString(),
+        isHelpful: false,
+        helpfulCount: 0
+      };
+      
+      db.answers.push(newAnswer);
+      await writeDB(db);
+      
+      // Get the answer with user info for response
+      const answerWithUser = {
+        ...newAnswer,
+        answeredBy: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          accountType: user.accountType,
+          university: user.university,
+          graduationYear: user.graduationYear
+        }
+      };
+      
+      res.status(201).json({
+        success: true,
+        message: 'Answer posted successfully',
+        answer: answerWithUser
+      });
+    } catch (error) {
+      console.error('Error posting answer:', error);
+      res.status(500).json({ success: false, message: 'Failed to post answer' });
+    }
+  });
+
+  // Mark answer as helpful
+  app.post('/api/prospective/answers/:answerId/helpful', authenticateToken, async (req, res) => {
+    try {
+      const { answerId } = req.params;
+      const userId = req.user.id;
+      
+      const db = await readDB();
+      if (!db.answers) db.answers = [];
+      if (!db.helpfulMarks) db.helpfulMarks = [];
+      
+      const answer = db.answers.find(a => a.id === answerId);
+      if (!answer) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Answer not found' 
+        });
+      }
+      
+      const existingMark = db.helpfulMarks.find(m => 
+        m.answerId === answerId && m.userId === userId
+      );
+      
+      if (existingMark) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Already marked as helpful' 
+        });
+      }
+      
+      db.helpfulMarks.push({
+        id: `helpful_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        answerId,
+        userId,
+        createdAt: new Date().toISOString()
+      });
+      
+      answer.helpfulCount = (answer.helpfulCount || 0) + 1;
+      await writeDB(db);
+      
+      res.json({
+        success: true,
+        message: 'Answer marked as helpful',
+        helpfulCount: answer.helpfulCount
+      });
+    } catch (error) {
+      console.error('Error marking answer as helpful:', error);
+      res.status(500).json({ success: false, message: 'Failed to mark answer as helpful' });
+    }
+  });
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

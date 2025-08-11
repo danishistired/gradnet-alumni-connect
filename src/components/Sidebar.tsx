@@ -12,7 +12,8 @@ import {
   ChevronDown, 
   ChevronRight,
   Hash,
-  Star
+  Star,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -69,7 +70,7 @@ export const Sidebar = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/feed' },
-    { icon: TrendingUp, label: 'Trending', path: '/trending' },
+    { icon: HelpCircle, label: 'CU Community', path: '/community-qa' },
     { icon: Users, label: 'All Communities', path: '/communities' },
   ];
 

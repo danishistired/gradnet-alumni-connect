@@ -88,6 +88,14 @@ const Index = () => {
                 >
                   Sign In
                 </Button>
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  className="text-lg px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600"
+                  onClick={() => navigate('/cu-questions')}
+                >
+                  Ask Questions to CU Community
+                </Button>
               </>
             )}
             <Button 

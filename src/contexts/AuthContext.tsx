@@ -5,17 +5,20 @@ interface User {
   firstName: string;
   lastName: string;
   email: string;
-  accountType: 'student' | 'alumni';
-  university: string;
-  graduationYear: string;
+  accountType: 'student' | 'alumni' | 'prospective';
+  university?: string;
+  graduationYear?: string;
+  currentSchool?: string;
+  interestedProgram?: string;
   profilePicture?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string, accountType: 'student' | 'alumni') => Promise<{ success: boolean; message: string }>;
+  login: (email: string, password: string, accountType: 'student' | 'alumni' | 'prospective') => Promise<{ success: boolean; message: string }>;
   register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
+  setAuthState: (user: User, token: string) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -41,6 +44,7 @@ export const useAuth = () => {
       token: null,
       login: async () => ({ success: false, message: 'Auth not available' }),
       register: async () => ({ success: false, message: 'Auth not available' }),
+      setAuthState: () => {},
       logout: () => {},
       isLoading: true
     };
@@ -98,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyToken();
   }, [token]);
 
-  const login = async (email: string, password: string, accountType: 'student' | 'alumni') => {
+  const login = async (email: string, password: string, accountType: 'student' | 'alumni' | 'prospective') => {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
@@ -156,11 +160,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const setAuthState = (user: User, token: string) => {
+    setUser(user);
+    setToken(token);
+    localStorage.setItem('token', token);
+  };
+
   const value: AuthContextType = {
     user,
     token,
     login,
     register,
+    setAuthState,
     logout,
     isLoading,
   };

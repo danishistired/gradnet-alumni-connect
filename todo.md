@@ -8,7 +8,7 @@
 - [x] connect/follow feature
 - [x] add data flow diagrams in the ppt (excalidraw)
 - [] footer
-- [] alumnis network for people wanting to join cu
+- [x] alumnis network for people wanting to join cu
     - filter questions
     - 
 - [x] fix the readme
@@ -27,6 +27,8 @@
 - [] following feature bug where every user is following the user i followed with another user  
 
 # Hackathon Day 1 ToDo
+- [] bug where prospective student can access the whole website when we click on the profile (create a seperate profile)
+- [] add image support to the posts
 - [] admin moderation 
 - [] network tab (recomment people with the same skills)
 - [] remove domain selection

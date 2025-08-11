@@ -19,6 +19,9 @@ import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
 import { AllCommunities } from "./pages/AllCommunities";
+import { ProspectiveStudent } from "./pages/ProspectiveStudent";
+import { ProspectiveQuestions } from "./pages/ProspectiveQuestions";
+import { CUCommunity } from "./pages/CUCommunity";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
@@ -46,6 +49,7 @@ const App = () => {
                         {/* Public routes - accessible to everyone */}
                         <Route path="/" element={<Index />} />
                         <Route path="/about" element={<About />} />
+                        <Route path="/cu-questions" element={<ProspectiveQuestions />} />
                         
                         {/* Guest-only routes - redirect authenticated users */}
                         <Route path="/login" element={
@@ -58,6 +62,11 @@ const App = () => {
                             <Register />
                           </GuestRoute>
                         } />
+                        <Route path="/prospective-student" element={
+                          <GuestRoute>
+                            <ProspectiveStudent />
+                          </GuestRoute>
+                        } />
                         
                         {/* Protected routes with sidebar */}
                         <Route path="/feed" element={
@@ -67,6 +76,32 @@ const App = () => {
                               <div className="w-full overflow-auto flex justify-center">
                                 <div className="w-full max-w-4xl">
                                   <Feed />
+                                </div>
+                              </div>
+                            </div>
+                          </AuthenticatedRoute>
+                        } />
+                        
+                        <Route path="/community-qa" element={
+                          <AuthenticatedRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-6xl">
+                                  <CUCommunity />
+                                </div>
+                              </div>
+                            </div>
+                          </AuthenticatedRoute>
+                        } />
+                        
+                        <Route path="/cu-questions" element={
+                          <AuthenticatedRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-6xl">
+                                  <CUCommunity />
                                 </div>
                               </div>
                             </div>
