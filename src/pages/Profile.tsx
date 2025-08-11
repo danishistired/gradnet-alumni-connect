@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/Navbar";
+import { Sidebar } from "@/components/Sidebar";
 import { FollowButton } from "@/components/FollowButton";
 import { FollowCountsDisplay } from "@/components/FollowCountsDisplay";
 import { ImageCropModal } from "@/components/ImageCropModal";
@@ -265,8 +266,13 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="pt-20 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        <div className="relative w-full min-h-screen">
+          <Sidebar />
+          <div className="w-full overflow-auto flex justify-center">
+            <div className="w-full max-w-4xl p-6 pt-20 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -276,8 +282,13 @@ const Profile = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="pt-20 px-4 text-center">
-          <h1 className="text-2xl font-bold text-text-primary">Profile not found</h1>
+        <div className="relative w-full min-h-screen">
+          <Sidebar />
+          <div className="w-full overflow-auto flex justify-center">
+            <div className="w-full max-w-4xl p-6 pt-20 text-center">
+              <h1 className="text-2xl font-bold text-text-primary">Profile not found</h1>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -286,9 +297,10 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="pt-20 pb-16 px-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative w-full min-h-screen">
+        <Sidebar />
+        <div className="w-full overflow-auto flex justify-center">
+          <div className="w-full max-w-4xl p-6 pt-20">
           {/* Banner and Profile Picture Section */}
           <Card className="mb-6 overflow-hidden">
             {/* Banner */}
@@ -627,8 +639,9 @@ const Profile = () => {
           open={showMessagesDialog}
           onOpenChange={setShowMessagesDialog}
         />
+          </div>
+        </div>
       </div>
-    </div>
   );
 };
 
