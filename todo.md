@@ -3,10 +3,10 @@
 - [x] move the search bar up to the Navbar 
 - [x] bring back the sidebar and shit
 - [x] remove the cart 
-- [] tldr ai 
+- [x] tldr ai 
 - [x] add regex function to check for valid emails 
 - [x] connect/follow feature
-- [] add data flow diagrams in the ppt (excalidraw)
+- [x] add data flow diagrams in the ppt (excalidraw)
 - [] footer
 - [] alumnis network for people wanting to join cu
     - filter questions

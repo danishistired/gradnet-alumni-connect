@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -51,18 +52,26 @@ export const Trending = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map(i => (
-            <Card key={i} className="h-48 bg-muted"></Card>
-          ))}
+      <div>
+        <Navbar />
+        <div className="pt-20 pb-16 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="h-48 bg-muted"></Card>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div>
+      <Navbar />
+      <div className="pt-20 pb-16 px-4">
+        <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <TrendingUp className="w-6 h-6 text-orange-500" />
@@ -162,6 +171,8 @@ export const Trending = () => {
           </Button>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 };

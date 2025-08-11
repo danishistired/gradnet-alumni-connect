@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,22 +107,30 @@ export const CommunityPage = () => {
 
   if (!community) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2">Community not found</h2>
-          <p className="text-muted-foreground">
-            The community "g/{communityName}" doesn't exist or has been removed.
-          </p>
-          <Link to="/communities" className="inline-block mt-4">
-            <Button>Browse Communities</Button>
-          </Link>
-        </Card>
+      <div>
+        <Navbar />
+        <div className="pt-20 pb-16 px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="p-8 text-center">
+              <h2 className="text-xl font-semibold mb-2">Community not found</h2>
+              <p className="text-muted-foreground">
+                The community "g/{communityName}" doesn't exist or has been removed.
+              </p>
+              <Link to="/communities" className="inline-block mt-4">
+                <Button>Browse Communities</Button>
+              </Link>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div>
+      <Navbar />
+      <div className="pt-20 pb-16 px-4">
+        <div className="max-w-6xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2">
@@ -259,6 +268,8 @@ export const CommunityPage = () => {
             </CardContent>
           </Card>
         </div>
+        </div>
+      </div>
       </div>
     </div>
   );
