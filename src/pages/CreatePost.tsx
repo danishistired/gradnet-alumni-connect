@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
 import { ApprovalStatusAlert } from "@/components/ApprovalStatusAlert";
-import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -27,6 +27,14 @@ const CreatePost = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Polish content feature state
+  const [isPolishing, setIsPolishing] = useState(false);
+  const [polishHistory, setPolishHistory] = useState<string[]>([]);
+  const [isPolishingTitle, setIsPolishingTitle] = useState(false);
+  const [titleHistory, setTitleHistory] = useState<string[]>([]);
+  const [isPolishingExcerpt, setIsPolishingExcerpt] = useState(false);
+  const [excerptHistory, setExcerptHistory] = useState<string[]>([]);
 
   useEffect(() => {
     const communityParam = searchParams.get('community');
@@ -196,6 +204,208 @@ const CreatePost = () => {
     });
   };
 
+  // Polish content using Ollama
+  const polishContent = async () => {
+    if (!formData.content.trim()) {
+      alert('Please enter some content first.');
+      return;
+    }
+
+    setIsPolishing(true);
+    
+    try {
+      // Save current content to history for undo functionality
+      setPolishHistory(prev => [...prev, formData.content]);
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama3.2:3b',
+          prompt: `Please improve the following blog post content by:
+1. Fixing any spelling errors
+2. Correcting grammar and punctuation
+3. Improving sentence structure and flow
+4. Making it more engaging and professional
+5. Keeping the original meaning and tone
+6. Maintaining any markdown formatting
+
+Content to improve:
+---
+${formData.content}
+---
+
+Please provide only the improved content without any explanations or additional text:`,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.response) {
+        // Update the content with the improved version
+        setFormData(prev => ({ 
+          ...prev, 
+          content: data.response.trim()
+        }));
+      } else {
+        throw new Error('No response from Ollama');
+      }
+    } catch (error) {
+      console.error('Error polishing content:', error);
+      alert('Failed to polish content. Please make sure Ollama is running with the llama3.2:3b model.');
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  // Polish title using Ollama
+  const polishTitle = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter a title first.');
+      return;
+    }
+
+    setIsPolishingTitle(true);
+    
+    try {
+      // Save current title to history for undo functionality
+      setTitleHistory(prev => [...prev, formData.title]);
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama3.2:3b',
+          prompt: `Please improve the following blog post title by:
+1. Fixing any spelling errors
+2. Correcting grammar and punctuation
+3. Making it more engaging and compelling
+4. Keeping it concise and professional
+5. Maintaining the original meaning
+
+Title to improve: "${formData.title}"
+
+Please provide only the improved title without quotes or additional text:`,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.response) {
+        // Update the title with the improved version
+        setFormData(prev => ({ 
+          ...prev, 
+          title: data.response.trim()
+        }));
+      } else {
+        throw new Error('No response from Ollama');
+      }
+    } catch (error) {
+      console.error('Error polishing title:', error);
+      alert('Failed to polish title. Please make sure Ollama is running with the llama3.2:3b model.');
+    } finally {
+      setIsPolishingTitle(false);
+    }
+  };
+
+  // Undo last polish operation
+  const undoPolish = () => {
+    if (polishHistory.length > 0) {
+      const lastVersion = polishHistory[polishHistory.length - 1];
+      setFormData(prev => ({ ...prev, content: lastVersion }));
+      setPolishHistory(prev => prev.slice(0, -1));
+    }
+  };
+
+  // Undo last title polish operation
+  const undoTitlePolish = () => {
+    if (titleHistory.length > 0) {
+      const lastVersion = titleHistory[titleHistory.length - 1];
+      setFormData(prev => ({ ...prev, title: lastVersion }));
+      setTitleHistory(prev => prev.slice(0, -1));
+    }
+  };
+
+  // Polish excerpt using Ollama
+  const polishExcerpt = async () => {
+    if (!formData.excerpt.trim()) {
+      alert('Please enter an excerpt first.');
+      return;
+    }
+
+    setIsPolishingExcerpt(true);
+    
+    try {
+      // Save current excerpt to history for undo functionality
+      setExcerptHistory(prev => [...prev, formData.excerpt]);
+
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama3.2:3b',
+          prompt: `Please improve the following blog post excerpt by:
+1. Fixing any spelling errors
+2. Correcting grammar and punctuation
+3. Making it more engaging and compelling
+4. Keeping it concise (under 200 characters)
+5. Making it hook readers to want to read more
+
+Excerpt to improve: "${formData.excerpt}"
+
+Please provide only the improved excerpt without quotes or additional text:`,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.response) {
+        // Update the excerpt with the improved version
+        setFormData(prev => ({ 
+          ...prev, 
+          excerpt: data.response.trim()
+        }));
+      } else {
+        throw new Error('No response from Ollama');
+      }
+    } catch (error) {
+      console.error('Error polishing excerpt:', error);
+      alert('Failed to polish excerpt. Please make sure Ollama is running with the llama3.2:3b model.');
+    } finally {
+      setIsPolishingExcerpt(false);
+    }
+  };
+
+  // Undo last excerpt polish operation
+  const undoExcerptPolish = () => {
+    if (excerptHistory.length > 0) {
+      const lastVersion = excerptHistory[excerptHistory.length - 1];
+      setFormData(prev => ({ ...prev, excerpt: lastVersion }));
+      setExcerptHistory(prev => prev.slice(0, -1));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -273,7 +483,33 @@ const CreatePost = () => {
               {/* Title */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Post Title</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Post Title</CardTitle>
+                    <div className="flex gap-2">
+                      {titleHistory.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={undoTitlePolish}
+                          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                        >
+                          Undo
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={polishTitle}
+                        disabled={isPolishingTitle || !formData.title.trim()}
+                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {isPolishingTitle ? 'Polishing...' : 'Polish Title'}
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Input
@@ -349,10 +585,38 @@ const CreatePost = () => {
               {/* Content Editor */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Content</CardTitle>
-                  <CardDescription>
-                    Write your post using Markdown. You can add code snippets, links, images, and more!
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Content</CardTitle>
+                      <CardDescription>
+                        Write your post using Markdown. You can add code snippets, links, images, and more!
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      {polishHistory.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={undoPolish}
+                          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                        >
+                          Undo Polish
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={polishContent}
+                        disabled={isPolishing || !formData.content.trim()}
+                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {isPolishing ? 'Polishing...' : 'Polish Content'}
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="border rounded-lg overflow-hidden">
@@ -367,14 +631,27 @@ const CreatePost = () => {
                   </div>
                   
                   {/* Quick Tips */}
-                  <div className="mt-4 p-4 bg-surface-muted rounded-lg">
-                    <h4 className="font-medium text-text-primary mb-2">Markdown Tips:</h4>
-                    <div className="text-sm text-text-secondary space-y-1">
-                      <p><code># Heading</code> - Create headings</p>
-                      <p><code>**bold**</code> - Make text bold</p>
-                      <p><code>`code`</code> - Inline code</p>
-                      <p><code>```language</code> - Code blocks with syntax highlighting</p>
-                      <p><code>[link text](url)</code> - Create links</p>
+                  <div className="mt-4 space-y-4">
+                    <div className="p-4 bg-surface-muted rounded-lg">
+                      <h4 className="font-medium text-text-primary mb-2">Markdown Tips:</h4>
+                      <div className="text-sm text-text-secondary space-y-1">
+                        <p><code># Heading</code> - Create headings</p>
+                        <p><code>**bold**</code> - Make text bold</p>
+                        <p><code>`code`</code> - Inline code</p>
+                        <p><code>```language</code> - Code blocks with syntax highlighting</p>
+                        <p><code>[link text](url)</code> - Create links</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="h-4 w-4 text-purple-600" />
+                        <h4 className="font-medium text-purple-800">AI Content Polish</h4>
+                      </div>
+                      <p className="text-sm text-purple-700">
+                        Use the "Polish Content" button to automatically improve spelling, grammar, 
+                        punctuation, and readability of your content using AI.
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -383,10 +660,38 @@ const CreatePost = () => {
               {/* Custom Excerpt */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Custom Excerpt (Optional)</CardTitle>
-                  <CardDescription>
-                    If not provided, we'll automatically generate one from your content
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Custom Excerpt (Optional)</CardTitle>
+                      <CardDescription>
+                        If not provided, we'll automatically generate one from your content
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      {excerptHistory.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={undoExcerptPolish}
+                          className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                        >
+                          Undo
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={polishExcerpt}
+                        disabled={isPolishingExcerpt || !formData.excerpt.trim()}
+                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {isPolishingExcerpt ? 'Polishing...' : 'Polish'}
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Input
