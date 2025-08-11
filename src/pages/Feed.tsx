@@ -227,9 +227,24 @@ const Feed = () => {
                       </div>
 
                       {/* Post Title */}
-                      <h2 className="text-lg font-semibold text-text-primary mb-2 hover:text-accent">
+                      <h2 className="text-lg font-semibold text-text-primary mb-3 hover:text-accent">
                         {post.title}
                       </h2>
+
+                      {/* Post Image - Reddit style large image */}
+                      {post.image && (
+                        <div className="mb-3">
+                          <img
+                            src={post.image}
+                            alt={post.title}
+                            className="w-full max-h-96 object-cover rounded-lg border border-border"
+                            onError={(e) => {
+                              // Hide image if it fails to load
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                       
                       {/* Category and Tags */}
                       <div className="flex flex-wrap gap-2 mb-3">

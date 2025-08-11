@@ -44,6 +44,7 @@ interface BlogPost {
   author: Author;
   isLiked: boolean;
   timeAgo: string;
+  image?: string;
 }
 
 interface CreatePostData {
@@ -54,6 +55,7 @@ interface CreatePostData {
   category: string;
   targetAudience: 'students' | 'alumni' | 'both';
   communityId?: string | null;
+  image?: string | null;
 }
 
 interface BlogFilters {

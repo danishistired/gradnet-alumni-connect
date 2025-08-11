@@ -279,6 +279,21 @@ Please provide a clear, concise summary that captures the main ideas and value f
               {/* Post Title */}
               <h1 className="text-3xl font-bold text-text-primary mb-4">{post.title}</h1>
               
+              {/* Post Image */}
+              {post.image && (
+                <div className="mb-6">
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full max-h-96 object-cover rounded-lg border border-border"
+                    onError={(e) => {
+                      // Hide image if it fails to load
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Category and Tags */}
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="outline">

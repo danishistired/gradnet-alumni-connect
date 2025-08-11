@@ -701,7 +701,7 @@ app.get('/api/posts', authenticateToken, async (req, res) => {
 // Create new post
 app.post('/api/posts', authenticateToken, async (req, res) => {
   try {
-    const { title, content, excerpt, tags, category, targetAudience, communityId } = req.body;
+    const { title, content, excerpt, tags, category, targetAudience, communityId, image } = req.body;
     
     if (!title || !content) {
       return res.status(400).json({ 
@@ -722,6 +722,7 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
       category: category || 'general',
       targetAudience: targetAudience || 'both',
       communityId: communityId || null,
+      image: image || null,
       status: 'published',
       likesCount: 0,
       commentsCount: 0,

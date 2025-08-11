@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
-import { ArrowLeft, Save, Eye, X, Hash } from "lucide-react";
+import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon } from "lucide-react";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -23,6 +23,9 @@ const CreatePost = () => {
   const [newTag, setNewTag] = useState("");
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [communityName, setCommunityName] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const communityParam = searchParams.get('community');
@@ -54,7 +57,8 @@ const CreatePost = () => {
     tags: [] as string[],
     category: "general",
     targetAudience: "both" as "students" | "alumni" | "both",
-    communityId: null as string | null
+    communityId: null as string | null,
+    image: null as string | null
   });
 
   const categories = [
@@ -80,10 +84,18 @@ const CreatePost = () => {
 
     setIsSubmitting(true);
     try {
+      let imageBase64 = null;
+      
+      // Convert image to base64 if selected
+      if (selectedImage) {
+        imageBase64 = await convertImageToBase64(selectedImage);
+      }
+
       const postData = {
         ...formData,
         excerpt: formData.excerpt || generateExcerpt(formData.content),
-        communityId: communityId
+        communityId: communityId,
+        image: imageBase64
       };
       
       const result = await createPost(postData);
@@ -137,6 +149,50 @@ const CreatePost = () => {
       e.preventDefault();
       addTag();
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file');
+        return;
+      }
+
+      setSelectedImage(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setFormData(prev => ({ ...prev, image: null }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   return (
@@ -201,6 +257,67 @@ const CreatePost = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     className="text-lg"
                   />
+                </CardContent>
+              </Card>
+
+              {/* Image Upload */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Post Image (Optional)</CardTitle>
+                  <CardDescription>
+                    Add an image to make your post more engaging. Max size: 5MB
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!imagePreview ? (
+                    <div className="space-y-4">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-32 border-2 border-dashed border-border hover:border-accent transition-colors flex flex-col items-center justify-center gap-2"
+                      >
+                        <Upload className="h-8 w-8 text-text-secondary" />
+                        <span className="text-text-secondary">Click to upload an image</span>
+                        <span className="text-sm text-text-muted">Supports JPG, PNG, GIF up to 5MB</span>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full max-h-64 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={removeImage}
+                          className="absolute top-2 right-2"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Change Image
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
