@@ -19,8 +19,8 @@
 # Shit for later
 - [] simple share feature
 - [] add new logo
-- [] profile banner
-- [] increase pfp size allowance
+- [x] profile banner
+- [x] increase pfp size allowance
 
 # Bugs
 - [x] fix where we end up when we launch the website

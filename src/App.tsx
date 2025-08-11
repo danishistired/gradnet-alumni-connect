@@ -9,7 +9,6 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import Profile from "./pages/Profile";
 import SkillSelection from "./pages/SkillSelection";
-import CompanySelection from "./pages/CompanySelection";
 import AlumniVerification from "./pages/AlumniVerification";
 import Feed from "./pages/Feed";
 import CreatePost from "./pages/CreatePost";
@@ -159,11 +158,6 @@ const App = () => {
                         <Route path="/skill-selection" element={
                           <AuthenticatedRoute>
                             <SkillSelection />
-                          </AuthenticatedRoute>
-                        } />
-                        <Route path="/company-selection" element={
-                          <AuthenticatedRoute>
-                            <CompanySelection />
                           </AuthenticatedRoute>
                         } />
                         
