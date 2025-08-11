@@ -15,6 +15,7 @@ import CreatePost from "./pages/CreatePost";
 import CreateCommunity from "./pages/CreateCommunity";
 import BlogDetail from "./pages/BlogDetail";
 import AdminPanel from "./pages/AdminPanel";
+import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
@@ -196,12 +197,9 @@ const App = () => {
                           </AlumniRoute>
                         } />
                         
-                        {/* Admin routes - require authentication (could be extended for admin-only) */}
-                        <Route path="/admin" element={
-                          <StudentAlumniRoute>
-                            <AdminPanel />
-                          </StudentAlumniRoute>
-                        } />
+                        {/* Admin routes */}
+                        <Route path="/admin" element={<AdminLogin />} />
+                        <Route path="/admin-panel" element={<AdminPanel />} />
                         
                         {/* Catch-all route for 404 */}
                         <Route path="*" element={<NotFound />} />

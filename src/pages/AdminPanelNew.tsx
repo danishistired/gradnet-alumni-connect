@@ -37,15 +37,6 @@ interface PendingUser {
 
 const AdminPanel = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalStudents: 0,
-    totalAlumni: 0,
-    pendingAlumni: 0,
-    approvedAlumni: 0,
-    totalPosts: 0,
-    totalCommunities: 0
-  });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -57,69 +48,72 @@ const AdminPanel = () => {
       return;
     }
     loadPendingUsers();
-    loadStats();
   }, [navigate]);
 
   const loadPendingUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/pending-alumni');
-      const data = await response.json();
+      // Simulate loading pending users from backend
+      const mockPendingUsers: PendingUser[] = [
+        {
+          id: '1',
+          firstName: 'Rajesh',
+          lastName: 'Kumar',
+          email: 'rajesh.kumar@email.com',
+          university: 'Chandigarh University',
+          graduationYear: '2022',
+          degree: 'Computer Science Engineering',
+          registrationDate: '2024-08-10',
+          proofDocument: {
+            name: 'degree_certificate.pdf',
+            url: '/mock-documents/degree_cert_1.pdf',
+            type: 'pdf'
+          }
+        },
+        {
+          id: '2',
+          firstName: 'Priya',
+          lastName: 'Sharma',
+          email: 'priya.sharma@email.com',
+          university: 'Chandigarh University',
+          graduationYear: '2021',
+          degree: 'Mechanical Engineering',
+          registrationDate: '2024-08-11',
+          proofDocument: {
+            name: 'transcript.pdf',
+            url: '/mock-documents/transcript_2.pdf',
+            type: 'pdf'
+          }
+        },
+        {
+          id: '3',
+          firstName: 'Amit',
+          lastName: 'Singh',
+          email: 'amit.singh@email.com',
+          university: 'Chandigarh University',
+          graduationYear: '2020',
+          degree: 'MBA',
+          registrationDate: '2024-08-12',
+          proofDocument: {
+            name: 'alumni_id_card.jpg',
+            url: '/mock-documents/id_card_3.jpg',
+            type: 'image'
+          }
+        }
+      ];
       
-      if (data.success) {
-        // Transform the data to match our interface
-        const transformedUsers = data.pendingAlumni.map((user: any) => ({
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          university: user.university,
-          graduationYear: user.graduationYear,
-          degree: 'Computer Science', // Default for now
-          registrationDate: new Date(user.createdAt).toLocaleDateString(),
-          proofDocument: user.proofDocument
-        }));
-        setPendingUsers(transformedUsers);
-      }
+      setPendingUsers(mockPendingUsers);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error loading pending users:', error);
-    } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/admin/stats');
-      const data = await response.json();
-      
-      if (data.success) {
-        setStats(data.stats);
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error);
     }
   };
 
   const handleApproveUser = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/approve-alumni/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Remove from pending list
-        setPendingUsers(prev => prev.filter(user => user.id !== userId));
-        // Reload stats to reflect changes
-        loadStats();
-        alert('User approved successfully!');
-      } else {
-        alert('Error approving user: ' + data.message);
-      }
+      console.log('Approving user:', userId);
+      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      alert('User approved successfully!');
     } catch (error) {
       console.error('Error approving user:', error);
       alert('Error approving user. Please try again.');
@@ -128,27 +122,9 @@ const AdminPanel = () => {
 
   const handleRejectUser = async (userId: string) => {
     try {
-      const reason = prompt('Please provide a reason for rejection (optional):');
-      
-      const response = await fetch(`http://localhost:5000/api/admin/reject-alumni/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Remove from pending list
-        setPendingUsers(prev => prev.filter(user => user.id !== userId));
-        // Reload stats to reflect changes
-        loadStats();
-        alert('User rejected successfully!');
-      } else {
-        alert('Error rejecting user: ' + data.message);
-      }
+      console.log('Rejecting user:', userId);
+      setPendingUsers(prev => prev.filter(user => user.id !== userId));
+      alert('User rejected successfully!');
     } catch (error) {
       console.error('Error rejecting user:', error);
       alert('Error rejecting user. Please try again.');
@@ -358,24 +334,24 @@ const AdminPanel = () => {
           </TabsContent>
 
           <TabsContent value="stats">
-            <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">Total Pending</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-gray-900">{stats.totalUsers}</div>
-                  <p className="text-xs text-gray-600">All registered users</p>
+                  <div className="text-2xl font-bold text-gray-900">{pendingUsers.length}</div>
+                  <p className="text-xs text-gray-600">Awaiting review</p>
                 </CardContent>
               </Card>
-
+              
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Students</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-600">Approved Today</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalStudents}</div>
-                  <p className="text-xs text-gray-600">Current students</p>
+                  <div className="text-2xl font-bold text-green-600">0</div>
+                  <p className="text-xs text-gray-600">New approvals</p>
                 </CardContent>
               </Card>
               
@@ -384,48 +360,8 @@ const AdminPanel = () => {
                   <CardTitle className="text-sm font-medium text-gray-600">Total Alumni</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.totalAlumni}</div>
-                  <p className="text-xs text-gray-600">All alumni</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Pending Alumni</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{stats.pendingAlumni}</div>
-                  <p className="text-xs text-gray-600">Awaiting approval</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Approved Alumni</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.approvedAlumni}</div>
-                  <p className="text-xs text-gray-600">Active alumni</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Posts</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-600">{stats.totalPosts}</div>
-                  <p className="text-xs text-gray-600">Platform posts</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-gray-600">Communities</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-indigo-600">{stats.totalCommunities}</div>
-                  <p className="text-xs text-gray-600">Active communities</p>
+                  <div className="text-2xl font-bold text-blue-600">156</div>
+                  <p className="text-xs text-gray-600">Active members</p>
                 </CardContent>
               </Card>
             </div>

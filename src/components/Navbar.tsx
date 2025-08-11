@@ -1,4 +1,5 @@
 import { Logo } from "./Logo";
+import { LanguageSelector } from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +10,7 @@ import { useLocation, Link, useNavigate, useSearchParams } from "react-router-do
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
+import { useTranslation } from 'react-i18next';
 
 interface NavbarProps {
   onMessagesClick?: () => void;
@@ -18,6 +20,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isLoading } = useAuth();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchParams.get("search") || "");
@@ -114,7 +117,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
               <div className="relative w-64 lg:w-96 hidden md:block">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
                 <Input
-                  placeholder="Search posts, people, or topics..."
+                  placeholder={t('nav.search')}
                   value={localSearchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10 bg-surface-muted border-border focus:bg-surface"
@@ -150,7 +153,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     }`}
                   >
                     <Home className="w-4 h-4" />
-                    Home
+                    {t('nav.home')}
                   </Link>
                   <Link 
                     ref={aboutRef}
@@ -160,7 +163,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     }`}
                   >
                     <Users className="w-4 h-4" />
-                    About
+                    {t('nav.about')}
                   </Link>
                 </>
               )}
@@ -175,7 +178,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     }`}
                   >
                     <Home className="w-4 h-4" />
-                    Dashboard
+                    {t('nav.dashboard')}
                   </Link>
                   <Link 
                     to="/network" 
@@ -184,7 +187,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     }`}
                   >
                     <Users className="w-4 h-4" />
-                    Network
+                    {t('nav.network')}
                   </Link>
                 </>
               )}
@@ -203,6 +206,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           
           {/* Right Section: Actions + Profile */}
           <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Language Selector */}
+            <LanguageSelector />
+            
             {user && (
               <>
                 {/* Post Blog Button */}
@@ -213,7 +219,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   onClick={() => navigate("/create-post")}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Post Blog
+                  {t('nav.createPost')}
                 </Button>
 
                 {/* Action Buttons */}
@@ -257,12 +263,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                      {t('nav.settings')}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
-                      Logout
+                      {t('nav.logout')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -291,12 +297,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <>
                     <Link to="/login">
                       <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
-                        Login
+                        {t('nav.signIn')}
                       </Button>
                     </Link>
                     <Link to="/register">
                       <Button variant="default" className="bg-accent hover:bg-accent-hover">
-                        Sign Up
+                        {t('nav.signUp')}
                       </Button>
                     </Link>
                   </>
@@ -321,7 +327,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Home className="w-4 h-4" />
-                    Home
+                    {t('nav.home')}
                   </Link>
                   <Link 
                     to="/about" 
@@ -331,7 +337,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Users className="w-4 h-4" />
-                    About
+                    {t('nav.about')}
                   </Link>
                 </>
               )}
@@ -347,7 +353,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Home className="w-4 h-4" />
-                    Dashboard
+                    {t('nav.dashboard')}
                   </Link>
                   <Link 
                     to="/network" 
@@ -357,7 +363,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Users className="w-4 h-4" />
-                    Network
+                    {t('nav.network')}
                   </Link>
                   
                   <Button 
@@ -370,7 +376,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     }}
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Post Blog
+                    {t('nav.createPost')}
                   </Button>
                 </>
               )}
@@ -397,12 +403,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     <>
                       <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
-                          Login
+                          {t('nav.signIn')}
                         </Button>
                       </Link>
                       <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
                         <Button variant="default" className="w-full justify-start bg-accent hover:bg-accent-hover">
-                          Sign Up
+                          {t('nav.signUp')}
                         </Button>
                       </Link>
                     </>

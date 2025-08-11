@@ -11,6 +11,7 @@ interface User {
   currentSchool?: string;
   interestedProgram?: string;
   profilePicture?: string;
+  isApproved?: boolean; // For alumni approval status
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
   setAuthState: (user: User, token: string) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>; // Add refresh function
   isLoading: boolean;
 }
 
@@ -46,6 +48,7 @@ export const useAuth = () => {
       register: async () => ({ success: false, message: 'Auth not available' }),
       setAuthState: () => {},
       logout: () => {},
+      refreshUser: async () => {},
       isLoading: true
     };
   }
@@ -154,6 +157,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/verify`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUser(data.user);
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -173,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     setAuthState,
     logout,
+    refreshUser,
     isLoading,
   };
 

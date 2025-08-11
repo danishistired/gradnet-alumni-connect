@@ -9,6 +9,7 @@ import { Users, MessageCircle, Plus, Calendar, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { useCommunity } from '@/contexts/CommunityContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Community {
   id: string;
@@ -34,6 +35,7 @@ interface CommunityPost {
 
 export const CommunityPage = () => {
   const { communityName } = useParams<{ communityName: string }>();
+  const { user } = useAuth();
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,19 +151,37 @@ export const CommunityPage = () => {
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button
-                    onClick={handleJoinToggle}
-                    variant={isJoined ? "outline" : "default"}
-                  >
-                    {isJoined ? "Leave" : "Join"}
-                  </Button>
-                  
-                  <Link to={`/create-post?community=${community.id}`}>
-                    <Button variant="outline">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Post
+                  {user?.accountType === 'alumni' && !user?.isApproved ? (
+                    <div className="flex flex-col gap-2">
+                      <Button disabled variant="outline">
+                        Join (Approval Required)
+                      </Button>
+                      <p className="text-xs text-red-600">
+                        Alumni approval required to join communities
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleJoinToggle}
+                      variant={isJoined ? "outline" : "default"}
+                    >
+                      {isJoined ? "Leave" : "Join"}
                     </Button>
-                  </Link>
+                  )}
+                  
+                  {user?.accountType === 'alumni' && !user?.isApproved ? (
+                    <Button disabled variant="outline">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Post (Approval Required)
+                    </Button>
+                  ) : (
+                    <Link to={`/create-post?community=${community.id}`}>
+                      <Button variant="outline">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Post
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
               

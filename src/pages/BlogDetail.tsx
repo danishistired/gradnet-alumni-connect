@@ -463,34 +463,45 @@ Please provide a clear, concise summary that captures the main ideas and value f
               {/* Add Comment Form */}
               {user && (
                 <div className="mb-6">
-                  <div className="flex gap-3">
-                    <Avatar className="h-10 w-10">
-                      {user.profilePicture ? (
-                        <AvatarImage src={user.profilePicture} />
-                      ) : null}
-                      <AvatarFallback className="bg-accent text-accent-foreground">
-                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <Textarea
-                        placeholder="Write a comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        className="mb-3"
-                        rows={3}
-                      />
-                      <div className="flex justify-end">
-                        <Button 
-                          size="sm" 
-                          disabled={!newComment.trim() || submittingComment}
-                          onClick={handleAddComment}
-                        >
-                          {submittingComment ? 'Posting...' : 'Post Comment'}
-                        </Button>
+                  {user.accountType === 'alumni' && !user.isApproved ? (
+                    <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                      <div className="text-red-600">
+                        <h4 className="font-medium mb-1">Account Pending Approval</h4>
+                        <p className="text-sm">
+                          You cannot post comments until your alumni account is approved by the admin team.
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex gap-3">
+                      <Avatar className="h-10 w-10">
+                        {user.profilePicture ? (
+                          <AvatarImage src={user.profilePicture} />
+                        ) : null}
+                        <AvatarFallback className="bg-accent text-accent-foreground">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <Textarea
+                          placeholder="Write a comment..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          className="mb-3"
+                          rows={3}
+                        />
+                        <div className="flex justify-end">
+                          <Button 
+                            size="sm" 
+                            disabled={!newComment.trim() || submittingComment}
+                            onClick={handleAddComment}
+                          >
+                            {submittingComment ? 'Posting...' : 'Post Comment'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -512,6 +523,11 @@ Please provide a clear, concise summary that captures the main ideas and value f
                         key={comment.id}
                         comment={comment}
                         currentUserId={user?.id}
+                        currentUser={user ? {
+                          id: user.id,
+                          accountType: user.accountType,
+                          isApproved: user.isApproved
+                        } : undefined}
                         onReply={handleReply}
                         onDelete={handleDeleteComment}
                         onLike={handleLikeComment}

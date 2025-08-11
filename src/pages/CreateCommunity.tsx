@@ -193,8 +193,25 @@ const CreateCommunity = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            {/* Check if alumni is approved */}
+            {user?.accountType === 'alumni' && !user?.isApproved ? (
+              <div className="lg:col-span-3">
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="py-12 text-center">
+                    <div className="text-red-600">
+                      <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Account Pending Approval</h3>
+                      <p className="text-sm">
+                        You cannot create communities until your alumni account is approved by the admin team.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                {/* Main Content */}
+                <div className="lg:col-span-2 space-y-6">
               
               {/* Community Name */}
               <Card>
@@ -470,6 +487,8 @@ const CreateCommunity = () => {
                 </Card>
               )}
             </div>
+            </>
+            )}
           </div>
 
           {/* Important Notice */}

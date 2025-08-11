@@ -168,7 +168,9 @@ app.post('/api/register', async (req, res) => {
       website: '',
       location: '',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      // Set isApproved to false for alumni, true for others
+      ...(accountType === 'alumni' && { isApproved: false })
     };
 
     db.users.push(newUser);
@@ -193,7 +195,8 @@ app.post('/api/register', async (req, res) => {
         accountType: newUser.accountType,
         university: newUser.university,
         graduationYear: newUser.graduationYear,
-        profilePicture: newUser.profilePicture
+        profilePicture: newUser.profilePicture,
+        isApproved: newUser.accountType === 'alumni' ? newUser.isApproved : true
       }
     });
 
@@ -352,6 +355,17 @@ app.post('/api/login', async (req, res) => {
       });
     }
 
+    // Initialize isApproved field for alumni if it doesn't exist
+    if (user.accountType === 'alumni' && user.isApproved === undefined) {
+      user.isApproved = false;
+      // Update the user in the database
+      const userIndex = db.users.findIndex(u => u.id === user.id);
+      if (userIndex !== -1) {
+        db.users[userIndex] = user;
+        await writeDB(db);
+      }
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, accountType: user.accountType },
@@ -373,7 +387,8 @@ app.post('/api/login', async (req, res) => {
         graduationYear: user.graduationYear || '',
         currentSchool: user.currentSchool || '',
         interestedProgram: user.interestedProgram || '',
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        isApproved: user.accountType === 'alumni' ? user.isApproved : true
       }
     });
 
@@ -1265,7 +1280,8 @@ app.get('/api/verify', authenticateToken, async (req, res) => {
         accountType: user.accountType,
         university: user.university,
         graduationYear: user.graduationYear,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        isApproved: user.accountType === 'alumni' ? user.isApproved : true
       }
     });
 
@@ -1959,6 +1975,151 @@ initializeDB().then(async () => {
     } catch (error) {
       console.error('Error marking answer as helpful:', error);
       res.status(500).json({ success: false, message: 'Failed to mark answer as helpful' });
+    }
+  });
+
+  // Admin endpoints
+  // Get pending alumni for approval
+  app.get('/api/admin/pending-alumni', async (req, res) => {
+    try {
+      const db = await readDB();
+      
+      // Get all alumni users and add isApproved field if it doesn't exist
+      const alumniUsers = db.users
+        .filter(user => user.accountType === 'alumni')
+        .map(user => {
+          // If isApproved field doesn't exist, set it to false (pending)
+          if (user.isApproved === undefined) {
+            user.isApproved = false;
+          }
+          return user;
+        });
+      
+      // Save updated users back to database
+      await writeDB(db);
+      
+      // Return only pending alumni (isApproved: false)
+      const pendingAlumni = alumniUsers.filter(user => !user.isApproved);
+      
+      res.json({
+        success: true,
+        pendingAlumni: pendingAlumni.map(user => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          university: user.university,
+          graduationYear: user.graduationYear,
+          createdAt: user.createdAt,
+          proofDocument: user.proofDocument || null
+        }))
+      });
+    } catch (error) {
+      console.error('Error fetching pending alumni:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch pending alumni' });
+    }
+  });
+
+  // Approve alumni
+  app.post('/api/admin/approve-alumni/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const db = await readDB();
+      
+      const userIndex = db.users.findIndex(user => user.id === userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      const user = db.users[userIndex];
+      if (user.accountType !== 'alumni') {
+        return res.status(400).json({ success: false, message: 'User is not an alumni' });
+      }
+      
+      // Approve the user
+      db.users[userIndex].isApproved = true;
+      db.users[userIndex].updatedAt = new Date().toISOString();
+      
+      await writeDB(db);
+      
+      res.json({
+        success: true,
+        message: 'Alumni approved successfully',
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isApproved: true
+        }
+      });
+    } catch (error) {
+      console.error('Error approving alumni:', error);
+      res.status(500).json({ success: false, message: 'Failed to approve alumni' });
+    }
+  });
+
+  // Reject alumni
+  app.post('/api/admin/reject-alumni/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { reason } = req.body;
+      const db = await readDB();
+      
+      const userIndex = db.users.findIndex(user => user.id === userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      const user = db.users[userIndex];
+      if (user.accountType !== 'alumni') {
+        return res.status(400).json({ success: false, message: 'User is not an alumni' });
+      }
+      
+      // Mark as rejected (you could delete or keep with rejected status)
+      db.users[userIndex].isApproved = false;
+      db.users[userIndex].rejectionReason = reason || 'No reason provided';
+      db.users[userIndex].updatedAt = new Date().toISOString();
+      
+      await writeDB(db);
+      
+      res.json({
+        success: true,
+        message: 'Alumni rejected successfully'
+      });
+    } catch (error) {
+      console.error('Error rejecting alumni:', error);
+      res.status(500).json({ success: false, message: 'Failed to reject alumni' });
+    }
+  });
+
+  // Get admin statistics
+  app.get('/api/admin/stats', async (req, res) => {
+    try {
+      const db = await readDB();
+      
+      const totalUsers = db.users.length;
+      const totalStudents = db.users.filter(user => user.accountType === 'student').length;
+      const totalAlumni = db.users.filter(user => user.accountType === 'alumni').length;
+      const pendingAlumni = db.users.filter(user => user.accountType === 'alumni' && !user.isApproved).length;
+      const approvedAlumni = db.users.filter(user => user.accountType === 'alumni' && user.isApproved).length;
+      const totalPosts = db.posts.length;
+      const totalCommunities = db.communities.length;
+      
+      res.json({
+        success: true,
+        stats: {
+          totalUsers,
+          totalStudents,
+          totalAlumni,
+          pendingAlumni,
+          approvedAlumni,
+          totalPosts,
+          totalCommunities
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch admin statistics' });
     }
   });
 

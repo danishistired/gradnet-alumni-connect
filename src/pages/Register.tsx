@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, GraduationCap, User } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, User, Upload, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 
@@ -20,7 +20,8 @@ export const Register = () => {
     accountType: "student" as "student" | "alumni",
     university: "",
     graduationYear: "",
-    agreeToTerms: false
+    agreeToTerms: false,
+    proofDocument: null as File | null
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -34,7 +35,7 @@ export const Register = () => {
   // Get the page user was trying to access before registration
   const from = location.state?.from?.pathname || '/skill-selection';
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | File | null) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -224,6 +225,43 @@ export const Register = () => {
                     required
                   />
                 </div>
+
+                {/* Alumni Proof Document Upload */}
+                {formData.accountType === "alumni" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="proofDocument">
+                      Alumni Verification Document
+                    </Label>
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <Input
+                          id="proofDocument"
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          onChange={(e) => {
+                            const file = e.target.files ? e.target.files[0] : null;
+                            handleInputChange("proofDocument", file);
+                          }}
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-accent file:text-accent-foreground hover:file:bg-accent-hover"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Upload proof of graduation (degree certificate, transcript, alumni ID card, etc.). 
+                        Supported formats: PDF, JPG, PNG, DOC. Max size: 5MB.
+                      </p>
+                      {formData.proofDocument && (
+                        <div className="flex items-center gap-2 text-sm text-green-600">
+                          <FileText className="w-4 h-4" />
+                          <span>{formData.proofDocument.name}</span>
+                          <span className="text-gray-500">
+                            ({(formData.proofDocument.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>

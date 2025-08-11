@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
+import { ApprovalStatusAlert } from "@/components/ApprovalStatusAlert";
 import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon } from "lucide-react";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
@@ -202,6 +203,14 @@ const CreatePost = () => {
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-4xl mx-auto">
           
+          {/* Approval Status Alert for Alumni */}
+          {user?.accountType === 'alumni' && (
+            <ApprovalStatusAlert 
+              isApproved={user?.isApproved || false} 
+              className="mb-6"
+            />
+          )}
+          
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -242,8 +251,24 @@ const CreatePost = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             
-            {/* Main Content */}
-            <div className="lg:col-span-3 space-y-6">
+            {/* Check if alumni is approved */}
+            {user?.accountType === 'alumni' && !user?.isApproved ? (
+              <div className="lg:col-span-4">
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="py-12 text-center">
+                    <div className="text-red-600">
+                      <h3 className="text-lg font-medium mb-2">Account Pending Approval</h3>
+                      <p className="text-sm">
+                        You cannot create posts until your alumni account is approved by the admin team.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                {/* Main Content */}
+                <div className="lg:col-span-3 space-y-6">
               
               {/* Title */}
               <Card>
@@ -487,6 +512,8 @@ const CreatePost = () => {
                 </Card>
               )}
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>

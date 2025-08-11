@@ -32,6 +32,11 @@ interface Comment {
 interface CommentProps {
   comment: Comment;
   currentUserId?: string;
+  currentUser?: {
+    id: string;
+    accountType: 'student' | 'alumni' | 'prospective';
+    isApproved?: boolean;
+  };
   onReply: (commentId: string, content: string) => Promise<void>;
   onDelete: (commentId: string) => Promise<void>;
   onLike: (commentId: string) => Promise<{ success: boolean; isLiked: boolean; likesCount: number }>;
@@ -40,7 +45,8 @@ interface CommentProps {
 
 export const CommentComponent: React.FC<CommentProps> = ({ 
   comment, 
-  currentUserId, 
+  currentUserId,
+  currentUser, 
   onReply, 
   onDelete, 
   onLike,
@@ -54,6 +60,14 @@ export const CommentComponent: React.FC<CommentProps> = ({
 
   const maxDepth = 5; // Maximum nesting depth for replies
   const canReply = depth < maxDepth;
+  
+  // Check if current user can reply (approved alumni or student)
+  const canUserReply = currentUserId && (
+    !currentUser?.accountType || 
+    currentUser.accountType === 'student' || 
+    currentUser.accountType === 'prospective' || 
+    (currentUser.accountType === 'alumni' && currentUser.isApproved)
+  );
 
   // Update local comment when parent comment changes
   React.useEffect(() => {
@@ -171,7 +185,7 @@ export const CommentComponent: React.FC<CommentProps> = ({
           {localComment.likesCount > 0 && localComment.likesCount}
         </Button>
         
-        {canReply && currentUserId && (
+        {canReply && canUserReply && (
           <Button 
             variant="ghost" 
             size="sm" 
@@ -206,7 +220,16 @@ export const CommentComponent: React.FC<CommentProps> = ({
       </div>
 
       {/* Reply Form */}
-      {isReplying && (
+      {currentUser?.accountType === 'alumni' && !currentUser?.isApproved && canReply && (
+        <div className="mb-4 bg-red-50 border border-red-200 p-3 rounded-lg">
+          <div className="text-red-600 text-sm">
+            <p className="font-medium">Account Pending Approval</p>
+            <p>You cannot reply to comments until your alumni account is approved.</p>
+          </div>
+        </div>
+      )}
+      
+      {isReplying && canUserReply && (
         <div className="mb-4 bg-surface-muted p-3 rounded-lg">
           <div className="flex gap-2">
             <Avatar className="h-6 w-6">
