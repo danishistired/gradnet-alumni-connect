@@ -28,7 +28,7 @@
 
 # Hackathon Day 1 ToDo
 - [x] bug where prospective student can access the whole website when we click on the profile (create a seperate profile)
-- [] add image support to the posts
+- [x] add image support to the posts
 - [] admin moderation 
 - [] network tab (recomment people with the same skills)
 - [x] remove domain selection
