@@ -73,7 +73,7 @@ function isValidEmail(email, accountType) {
   if (accountType === 'student') {
     return email.endsWith('@cuchd.in');
   }
-  // For alumni, any valid email format
+  // For alumni and prospective students, any valid email format
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
@@ -369,8 +369,10 @@ app.post('/api/login', async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         accountType: user.accountType,
-        university: user.university,
-        graduationYear: user.graduationYear,
+        university: user.university || '',
+        graduationYear: user.graduationYear || '',
+        currentSchool: user.currentSchool || '',
+        interestedProgram: user.interestedProgram || '',
         profilePicture: user.profilePicture || null
       }
     });

@@ -272,16 +272,35 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
             {/* Sign Up/Login buttons for non-authenticated users */}
             {!user && (
               <div className="flex items-center gap-3">
-                <Link to="/login">
-                  <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
-                    Login
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="default" className="bg-accent hover:bg-accent-hover">
-                    Sign Up
-                  </Button>
-                </Link>
+                {location.pathname === '/cu-questions' ? (
+                  // Special buttons for CU Questions page (prospective students)
+                  <>
+                    <Link to="/prospective-login">
+                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/prospective-student">
+                      <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+                        Join CU Community
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  // Regular buttons for other pages
+                  <>
+                    <Link to="/login">
+                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link to="/register">
+                      <Button variant="default" className="bg-accent hover:bg-accent-hover">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -359,16 +378,35 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
               {/* Show Login/Register only for non-authenticated users */}
               {!user && (
                 <div className="flex flex-col space-y-2 pt-2">
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
-                      Login
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="default" className="w-full justify-start bg-accent hover:bg-accent-hover">
-                      Sign Up
-                    </Button>
-                  </Link>
+                  {location.pathname === '/cu-questions' ? (
+                    // Special buttons for CU Questions page (prospective students)
+                    <>
+                      <Link to="/prospective-login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link to="/prospective-student" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="default" className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+                          Join CU Community
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    // Regular buttons for other pages
+                    <>
+                      <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
+                          Login
+                        </Button>
+                      </Link>
+                      <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="default" className="w-full justify-start bg-accent hover:bg-accent-hover">
+                          Sign Up
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>

@@ -98,3 +98,38 @@ export const AlumniRoute = ({ children }: { children: ReactNode }) => (
     {children}
   </ProtectedRoute>
 );
+
+export const StudentAlumniRoute = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+          <p className="text-text-secondary">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not logged in, redirect to login
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If user is prospective student, redirect them to CU questions page
+  if (user.accountType === 'prospective') {
+    return <Navigate to="/cu-questions" replace />;
+  }
+
+  // If user is student or alumni, allow access
+  if (user.accountType === 'student' || user.accountType === 'alumni') {
+    return <>{children}</>;
+  }
+
+  // Default redirect for any other case
+  return <Navigate to="/cu-questions" replace />;
+};

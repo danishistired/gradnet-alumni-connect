@@ -21,13 +21,14 @@ import { CommunityPage } from "./pages/CommunityPage";
 import { AllCommunities } from "./pages/AllCommunities";
 import { ProspectiveStudent } from "./pages/ProspectiveStudent";
 import { ProspectiveQuestions } from "./pages/ProspectiveQuestions";
+import { ProspectiveLogin } from "./pages/ProspectiveLogin";
 import { CUCommunity } from "./pages/CUCommunity";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { CommunityProvider } from "@/contexts/CommunityContext";
-import { ProtectedRoute, GuestRoute, AuthenticatedRoute, StudentRoute, AlumniRoute } from "@/components/ProtectedRoute";
+import { ProtectedRoute, GuestRoute, AuthenticatedRoute, StudentRoute, AlumniRoute, StudentAlumniRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 
 const queryClient = new QueryClient();
@@ -67,10 +68,15 @@ const App = () => {
                             <ProspectiveStudent />
                           </GuestRoute>
                         } />
+                        <Route path="/prospective-login" element={
+                          <GuestRoute>
+                            <ProspectiveLogin />
+                          </GuestRoute>
+                        } />
                         
-                        {/* Protected routes with sidebar */}
+                        {/* Protected routes with sidebar - Students and Alumni only */}
                         <Route path="/feed" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -79,11 +85,11 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/community-qa" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -92,24 +98,11 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
-                        } />
-                        
-                        <Route path="/cu-questions" element={
-                          <AuthenticatedRoute>
-                            <div className="relative w-full min-h-screen">
-                              <Sidebar />
-                              <div className="w-full overflow-auto flex justify-center">
-                                <div className="w-full max-w-6xl">
-                                  <CUCommunity />
-                                </div>
-                              </div>
-                            </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/trending" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -118,17 +111,17 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/communities" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <AllCommunities />
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/g/:communityName" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -137,11 +130,11 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/create-post" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -150,11 +143,11 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/create-community" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -163,11 +156,11 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         <Route path="/blog/:id" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <div className="relative w-full min-h-screen">
                               <Sidebar />
                               <div className="w-full overflow-auto flex justify-center">
@@ -176,24 +169,24 @@ const App = () => {
                                 </div>
                               </div>
                             </div>
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
-                        {/* Protected routes without sidebar */}
+                        {/* Protected routes without sidebar - Students and Alumni only */}
                         <Route path="/profile" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <Profile />
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         <Route path="/user/:userId" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <Profile />
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         <Route path="/skill-selection" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <SkillSelection />
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         {/* Alumni-specific routes */}
@@ -205,9 +198,9 @@ const App = () => {
                         
                         {/* Admin routes - require authentication (could be extended for admin-only) */}
                         <Route path="/admin" element={
-                          <AuthenticatedRoute>
+                          <StudentAlumniRoute>
                             <AdminPanel />
-                          </AuthenticatedRoute>
+                          </StudentAlumniRoute>
                         } />
                         
                         {/* Catch-all route for 404 */}
