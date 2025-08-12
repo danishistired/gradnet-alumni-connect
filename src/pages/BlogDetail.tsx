@@ -10,6 +10,7 @@ import { CommentComponent } from "@/components/CommentComponent";
 import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Heart, MessageCircle, Share2, BookmarkPlus, Eye, Trash2, Sparkles } from "lucide-react";
+import { Footer } from "@/components/Footer";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -539,6 +540,9 @@ Please provide a clear, concise summary that captures the main ideas and value f
             </CardContent>
           </Card>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );

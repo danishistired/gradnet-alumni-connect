@@ -10,6 +10,7 @@ import { useBlog } from "@/contexts/BlogContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Heart, MessageCircle, Share2, BookmarkPlus, TrendingUp, Users, GraduationCap, Briefcase, Star, Trash2 } from "lucide-react";
 import ChatBot from "@/components/ChatBot";
+import { Footer } from "@/components/Footer";
 
 const Feed = () => {
   const navigate = useNavigate();
@@ -309,6 +310,9 @@ const Feed = () => {
 
       {/* ChatBot Component */}
       <ChatBot />
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

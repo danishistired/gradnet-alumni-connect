@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Navbar } from "@/components/Navbar";
 import { ApprovalStatusAlert } from "@/components/ApprovalStatusAlert";
 import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Footer } from "@/components/Footer";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -821,6 +822,9 @@ Please provide only the improved excerpt without quotes or additional text:`,
             )}
           </div>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );

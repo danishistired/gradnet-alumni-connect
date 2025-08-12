@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Eye, EyeOff, GraduationCap, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
+import { Footer } from "@/components/Footer";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Login = () => {
@@ -193,6 +194,9 @@ export const Login = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, GraduationCap, User, Upload, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export const Register = () => {
   const [formData, setFormData] = useState({
@@ -372,6 +373,9 @@ export const Register = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );

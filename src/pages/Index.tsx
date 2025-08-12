@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
 import { ArrowRight, Users, TrendingUp, Award, Globe } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { Footer } from "@/components/Footer";
 import heroBg from "@/assets/hero-bg.jpg";
 
 
@@ -128,6 +129,9 @@ const Index = () => {
           </Button>
         </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -33,6 +33,7 @@ import {
   Plus,
   MessageSquare
 } from "lucide-react";
+import { Footer } from "@/components/Footer";
 
 interface UserProfile {
   id: string;
@@ -641,6 +642,9 @@ const Profile = () => {
         />
           </div>
         </div>
+        
+        {/* Footer */}
+        <Footer />
       </div>
   );
 };
