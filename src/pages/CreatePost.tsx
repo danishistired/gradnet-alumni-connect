@@ -36,6 +36,11 @@ const CreatePost = () => {
   const [titleHistory, setTitleHistory] = useState<string[]>([]);
   const [isPolishingExcerpt, setIsPolishingExcerpt] = useState(false);
   const [excerptHistory, setExcerptHistory] = useState<string[]>([]);
+  
+  // AI tag generation state
+  const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+  const [aiGeneratedTags, setAiGeneratedTags] = useState<string[]>([]);
+  const [lastTagGeneration, setLastTagGeneration] = useState<{title: string, content: string}>({title: '', content: ''});
 
   useEffect(() => {
     const communityParam = searchParams.get('community');
@@ -407,6 +412,98 @@ Please provide only the improved excerpt without quotes or additional text:`,
     }
   };
 
+  // Generate AI tags based on title and content
+  const generateAITags = async () => {
+    if (!formData.title.trim() || !formData.content.trim()) {
+      return; // Don't generate if title or content is empty
+    }
+
+    // Check if content has changed since last generation
+    if (lastTagGeneration.title === formData.title && lastTagGeneration.content === formData.content) {
+      return; // Don't regenerate if nothing changed
+    }
+
+    setIsGeneratingTags(true);
+    
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama3.2:3b',
+          prompt: `Based on the following blog post title and content, generate exactly 3 relevant tags that would help people discover this post. 
+
+Title: "${formData.title}"
+
+Content: "${formData.content.substring(0, 500)}..."
+
+Requirements:
+- Generate exactly 3 tags maximum
+- Make tags concise (1-2 words each)
+- Make them relevant to the content
+- Use lowercase
+- Separate tags with commas
+- No hashtags or special characters
+- Focus on the main topics, skills, or themes
+
+Respond with only the 3 tags separated by commas, nothing else:`,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.response) {
+        const tags = data.response.trim()
+          .split(',')
+          .map(tag => tag.trim().toLowerCase())
+          .filter(tag => tag.length > 0)
+          .slice(0, 3); // Ensure max 3 tags
+        
+        // Update AI generated tags
+        setAiGeneratedTags(tags);
+        
+        // Add AI tags to formData if they don't already exist
+        setFormData(prev => {
+          const existingTags = prev.tags;
+          const newTags = tags.filter(tag => !existingTags.includes(tag));
+          return {
+            ...prev,
+            tags: [...existingTags, ...newTags]
+          };
+        });
+
+        // Update last generation reference
+        setLastTagGeneration({
+          title: formData.title,
+          content: formData.content
+        });
+      }
+    } catch (error) {
+      console.error('Error generating AI tags:', error);
+      // Fail silently for tag generation
+    } finally {
+      setIsGeneratingTags(false);
+    }
+  };
+
+  // Auto-generate tags when title and content are complete
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.title.trim() && formData.content.trim()) {
+        generateAITags();
+      }
+    }, 2000); // Wait 2 seconds after user stops typing
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.title, formData.content]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -504,9 +601,11 @@ Please provide only the improved excerpt without quotes or additional text:`,
                         size="sm"
                         onClick={polishTitle}
                         disabled={isPolishingTitle || !formData.title.trim()}
-                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                        className={`text-purple-600 border-purple-300 hover:bg-purple-50 transition-all duration-300 hover:scale-105 ${
+                          isPolishingTitle ? 'animate-pulse bg-purple-50' : ''
+                        }`}
                       >
-                        <Sparkles className="h-4 w-4 mr-2" />
+                        <Sparkles className={`h-4 w-4 mr-2 ${isPolishingTitle ? 'animate-spin' : ''}`} />
                         {isPolishingTitle ? 'Polishing...' : 'Polish Title'}
                       </Button>
                     </div>
@@ -611,9 +710,11 @@ Please provide only the improved excerpt without quotes or additional text:`,
                         size="sm"
                         onClick={polishContent}
                         disabled={isPolishing || !formData.content.trim()}
-                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                        className={`text-purple-600 border-purple-300 hover:bg-purple-50 transition-all duration-300 hover:scale-105 ${
+                          isPolishing ? 'animate-pulse bg-purple-50' : ''
+                        }`}
                       >
-                        <Sparkles className="h-4 w-4 mr-2" />
+                        <Sparkles className={`h-4 w-4 mr-2 ${isPolishing ? 'animate-spin' : ''}`} />
                         {isPolishing ? 'Polishing...' : 'Polish Content'}
                       </Button>
                     </div>
@@ -686,9 +787,11 @@ Please provide only the improved excerpt without quotes or additional text:`,
                         size="sm"
                         onClick={polishExcerpt}
                         disabled={isPolishingExcerpt || !formData.excerpt.trim()}
-                        className="text-purple-600 border-purple-300 hover:bg-purple-50"
+                        className={`text-purple-600 border-purple-300 hover:bg-purple-50 transition-all duration-300 hover:scale-105 ${
+                          isPolishingExcerpt ? 'animate-pulse bg-purple-50' : ''
+                        }`}
                       >
-                        <Sparkles className="h-4 w-4 mr-2" />
+                        <Sparkles className={`h-4 w-4 mr-2 ${isPolishingExcerpt ? 'animate-spin' : ''}`} />
                         {isPolishingExcerpt ? 'Polishing...' : 'Polish'}
                       </Button>
                     </div>
@@ -755,9 +858,17 @@ Please provide only the improved excerpt without quotes or additional text:`,
               {/* Tags */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Tags</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Tags
+                    {isGeneratingTags && (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                        <span className="text-sm text-purple-600">Generating AI tags...</span>
+                      </div>
+                    )}
+                  </CardTitle>
                   <CardDescription>
-                    Add tags to help others discover your post
+                    Add tags to help others discover your post. AI will automatically suggest tags based on your content.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -781,11 +892,31 @@ Please provide only the improved excerpt without quotes or additional text:`,
                   
                   {formData.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {formData.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="cursor-pointer" onClick={() => removeTag(tag)}>
-                          {tag} <X className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
+                      {formData.tags.map((tag, index) => {
+                        const isAIGenerated = aiGeneratedTags.includes(tag);
+                        return (
+                          <Badge 
+                            key={index} 
+                            variant="secondary" 
+                            className={`cursor-pointer transition-all ${
+                              isAIGenerated 
+                                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600' 
+                                : 'hover:bg-gray-300'
+                            }`}
+                            onClick={() => removeTag(tag)}
+                          >
+                            {isAIGenerated && <Sparkles className="h-3 w-3 mr-1" />}
+                            {tag} <X className="h-3 w-3 ml-1" />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {aiGeneratedTags.length > 0 && (
+                    <div className="text-xs text-purple-600 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI-generated tags are highlighted with a colorful background
                     </div>
                   )}
                 </CardContent>

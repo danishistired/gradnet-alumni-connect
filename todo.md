@@ -7,7 +7,7 @@
 - [x] add regex function to check for valid emails 
 - [x] connect/follow feature
 - [x] add data flow diagrams in the ppt (excalidraw)
-- [] footer
+- [x] footer
 - [x] alumnis network for people wanting to join cu
     - filter questions
     - 
@@ -18,13 +18,12 @@
 
 # Shit for later
 - [] simple share feature
-- [] add new logo
 - [x] profile banner
 - [x] increase pfp size allowance
 
 # Bugs
 - [x] fix where we end up when we launch the website
-- [] following feature bug where every user is following the user i followed with another user  
+- [x] following feature bug where every user is following the user i followed with another user  
 
 # Hackathon Day 1 ToDo
 - [x] bug where prospective student can access the whole website when we click on the profile (create a seperate profile)

@@ -73,18 +73,20 @@ export const Login = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center px-4 gradient-bg"
-      style={{
-        backgroundImage: `url(${heroBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
-      
-      <Card className="w-full max-w-md relative z-10 card-elevated animate-fade-in">
+    <div className="min-h-screen">
+      {/* Main login area */}
+      <div 
+        className="min-h-screen flex items-center justify-center px-4 gradient-bg"
+        style={{
+          backgroundImage: `url(${heroBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
+        
+        <Card className="w-full max-w-md relative z-10 card-elevated animate-fade-in">
         <CardHeader className="text-center pb-4">
           <Logo className="justify-center mb-4" animated />
           <h1 className="text-2xl font-semibold text-text-primary">Welcome to GradNet</h1>
@@ -194,9 +196,10 @@ export const Login = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
       
       {/* Footer */}
       <Footer />
     </div>
   );
-}
+};
