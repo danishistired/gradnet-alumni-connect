@@ -6,6 +6,8 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import enTranslations from './locales/en.json';
 import hiTranslations from './locales/hi.json';
 import paTranslations from './locales/pa.json';
+import teTranslations from './locales/te.json';
+import taTranslations from './locales/ta.json';
 
 i18n
   .use(LanguageDetector)
@@ -15,6 +17,8 @@ i18n
       en: { translation: enTranslations },
       hi: { translation: hiTranslations },  // Hindi
       pa: { translation: paTranslations },  // Punjabi
+      te: { translation: teTranslations },  // Telugu
+      ta: { translation: taTranslations },  // Tamil
     },
     fallbackLng: 'en',
     debug: process.env.NODE_ENV === 'development',
