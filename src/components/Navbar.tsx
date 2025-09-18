@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTranslation } from 'react-i18next';
+import GlassSurface from './GlassSurface';
 
 interface NavbarProps {
   onMessagesClick?: () => void;
@@ -24,10 +25,6 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchParams.get("search") || "");
-  const [activeIndicator, setActiveIndicator] = useState({ left: 0, width: 0 });
-  const homeRef = useRef<HTMLAnchorElement>(null);
-  const aboutRef = useRef<HTMLAnchorElement>(null);
-  const navContainerRef = useRef<HTMLDivElement>(null);
   
   const isActive = (path: string) => location.pathname === path;
 
@@ -49,48 +46,6 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
     }
     setSearchParams(newSearchParams);
   };
-
-  // Update active indicator position
-  useEffect(() => {
-    const updateActiveIndicator = () => {
-      // Only show indicator for non-authenticated users on Home/About pages
-      if (user) {
-        setActiveIndicator({ left: 0, width: 0 });
-        return;
-      }
-      
-      let activeRef = null;
-      
-      if (location.pathname === '/') {
-        activeRef = homeRef.current;
-      } else if (location.pathname === '/about') {
-        activeRef = aboutRef.current;
-      }
-      
-      if (activeRef && navContainerRef.current) {
-        const containerRect = navContainerRef.current.getBoundingClientRect();
-        const activeRect = activeRef.getBoundingClientRect();
-        
-        setActiveIndicator({
-          left: activeRect.left - containerRect.left,
-          width: activeRect.width
-        });
-      } else {
-        // Hide indicator if no active page
-        setActiveIndicator({ left: 0, width: 0 });
-      }
-    };
-
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(updateActiveIndicator, 50);
-    
-    // Update on window resize
-    window.addEventListener('resize', updateActiveIndicator);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', updateActiveIndicator);
-    };
-  }, [location.pathname, user]);
   
   const handleLogout = () => {
     logout();
@@ -102,227 +57,145 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-surface border-b border-border z-50">
-      <div className="w-full px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+    <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 px-4">
+      <GlassSurface 
+        width={1200} 
+        height={80}
+        borderRadius={40}
+        displace={15}
+        distortionScale={-150}
+        redOffset={5}
+        greenOffset={15}
+        blueOffset={25}
+        brightness={60}
+        opacity={0.8}
+        mixBlendMode="screen"
+        className="w-full max-w-6xl"
+      >
+        <div className="flex items-center h-full px-8">
           
-          {/* Left Section: Logo + Search */}
+          {/* Left Section: GRADNET Text */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link to="/" className="flex-shrink-0">
-              <Logo />
+              <span className="text-white text-2xl font-bold">GRADNET</span>
             </Link>
             
             {/* Search Bar - only show for authenticated users */}
             {user && (
-              <div className="relative w-64 lg:w-96 hidden md:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary" />
+              <div className="relative w-48 lg:w-72 hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white" />
                 <Input
                   placeholder={t('nav.search')}
                   value={localSearchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 bg-surface-muted border-border focus:bg-surface"
+                  className="pl-10 bg-transparent border-white/30 focus:bg-transparent text-white placeholder:text-white/70"
                 />
               </div>
             )}
           </div>
 
-          {/* Center Section: Navigation Links */}
-          <div ref={navContainerRef} className="hidden md:flex items-center justify-center flex-1 absolute left-1/2 transform -translate-x-1/2">
-            {/* Sliding Active Indicator - only show for non-authenticated users */}
-            {!user && (
-              <div 
-                className="absolute top-2 bottom-2 bg-accent-light rounded-lg transition-all duration-300 ease-in-out z-0 shadow-sm"
-                style={{
-                  left: `${activeIndicator.left}px`,
-                  width: `${activeIndicator.width}px`,
-                  opacity: (isActive('/') || isActive('/about')) ? 1 : 0,
-                  transform: `translateZ(0)` // Force hardware acceleration
-                }}
-              />
-            )}
-            
-            <div className="flex items-center space-x-8 relative">
-              {/* Show Home and About only for non-authenticated users */}
-              {!user && (
-                <>
-                  <Link 
-                    ref={homeRef}
-                    to="/" 
-                    className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    {t('nav.home')}
-                  </Link>
-                  <Link 
-                    ref={aboutRef}
-                    to="/about" 
-                    className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    {t('nav.about')}
-                  </Link>
-                </>
-              )}
-              
-              {/* Show Dashboard and Network only for authenticated users */}
-              {user && (
-                <>
-                  <Link 
-                    to="/feed" 
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/feed') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Home className="w-4 h-4" />
-                    {t('nav.dashboard')}
-                  </Link>
-                  <Link 
-                    to="/network" 
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/network') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    {t('nav.network')}
-                  </Link>
-                </>
-              )}
+          {/* Center Section: Home and About Links */}
+          <div className="flex-1 flex items-center justify-center px-8">
+            <div className="hidden md:flex items-center space-x-6">
+              <Link 
+                to="/" 
+                className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isActive('/') ? 'text-white bg-white/20' : 'text-white hover:text-white/80'
+                }`}
+              >
+                <Home className="w-4 h-4" />
+                {t('nav.home')}
+              </Link>
+              <Link 
+                to="/about" 
+                className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isActive('/about') ? 'text-white bg-white/20' : 'text-white hover:text-white/80'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                {t('nav.about')}
+              </Link>
             </div>
           </div>
 
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden ml-auto"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          
-          {/* Right Section: Actions + Profile */}
+          {/* Right Section: Language + Auth Buttons */}
           <div className="flex items-center gap-4 flex-shrink-0">
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden text-white hover:text-white/80"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            
             {/* Language Selector */}
             <LanguageSelector />
             
-            {user && (
-              <>
-                {/* Post Blog Button */}
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  className="bg-accent hover:bg-accent-hover hidden lg:flex"
-                  onClick={() => navigate("/create-post")}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('nav.createPost')}
-                </Button>
-
-                {/* Action Buttons */}
-                <div className="hidden sm:flex items-center gap-3">
-                  {/* Notifications Dropdown */}
-                  <NotificationsDropdown />
-
-                  {/* Messages */}
-                  {onMessagesClick && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={onMessagesClick}
-                      className="relative"
-                    >
-                      <Mail className="w-4 h-4" />
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"></span>
-                    </Button>
-                  )}
-                </div>
-
-                {/* Profile Avatar Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={user.profilePicture || undefined}
-                          alt={`${user.firstName} ${user.lastName}`}
-                        />
-                        <AvatarFallback className="bg-accent text-accent-foreground">
-                          {getInitials(user.firstName, user.lastName)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/settings")}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      {t('nav.settings')}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      {t('nav.logout')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-            
             {/* Sign Up/Login buttons for non-authenticated users */}
             {!user && (
-              <div className="flex items-center gap-3">
-                {location.pathname === '/cu-questions' ? (
-                  // Special buttons for CU Questions page (prospective students)
-                  <>
-                    <Link to="/prospective-login">
-                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link to="/prospective-student">
-                      <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-                        Join CU Community
-                      </Button>
-                    </Link>
-                  </>
-                ) : (
-                  // Regular buttons for other pages
-                  <>
-                    <Link to="/login">
-                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
-                        {t('nav.signIn')}
-                      </Button>
-                    </Link>
-                    <Link to="/register">
-                      <Button variant="default" className="bg-accent hover:bg-accent-hover">
-                        {t('nav.signUp')}
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </div>
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" className="text-white hover:text-white/80">
+                    {t('nav.signIn')}
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="default" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                    {t('nav.signUp')}
+                  </Button>
+                </Link>
+              </>
+            )}
+
+            {/* User profile for authenticated users */}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full text-white hover:text-white/80">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={user.profilePicture || undefined}
+                        alt={`${user.firstName} ${user.lastName}`}
+                      />
+                      <AvatarFallback className="bg-accent text-accent-foreground">
+                        {getInitials(user.firstName, user.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t('nav.settings')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t('nav.logout')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col space-y-2">
+          <div className="md:hidden py-6 border-t border-white/20">
+            <div className="flex flex-col space-y-3 px-4">
               {/* Show Home and About only for non-authenticated users */}
               {!user && (
                 <>
                   <Link 
                     to="/" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/') ? 'bg-white/20 text-white' : 'text-white hover:text-white/80'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -332,7 +205,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Link 
                     to="/about" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/about') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/about') ? 'bg-white/20 text-white' : 'text-white hover:text-white/80'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -348,7 +221,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Link 
                     to="/feed" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/feed') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/feed') ? 'bg-white/20 text-white' : 'text-white hover:text-white/80'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -358,7 +231,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Link 
                     to="/network" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/network') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/network') ? 'bg-white/20 text-white' : 'text-white hover:text-white/80'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -369,7 +242,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Button 
                     variant="default" 
                     size="sm" 
-                    className="bg-accent hover:bg-accent-hover justify-start"
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30 justify-start"
                     onClick={() => {
                       navigate("/create-post");
                       setIsMobileMenuOpen(false);
@@ -418,7 +291,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
             </div>
           </div>
         )}
-      </div>
+      </GlassSurface>
     </nav>
   );
 };
