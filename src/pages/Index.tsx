@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
@@ -13,6 +13,7 @@ import ScrambledText from '@/components/ScrambledText';
 import PixelBlast from '@/components/PixelBlast';
 import GlassSurface from '@/components/GlassSurface';
 import CardSwap, { Card as SwapCard } from '@/components/CardSwap';
+import ScrollVelocity from '@/components/ScrollVelocity';
 
 
 
@@ -32,6 +33,7 @@ const Index = () => {
   { label: 'LinkedIn', link: 'https://linkedin.com' }
   ];
   const { user, isLoading } = useAuth();
+  const [velocity, setVelocity] = useState(100);
 
   // Automatically redirect logged-in users to Feed
   useEffect(() => {
@@ -55,7 +57,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
       {/* PixelBlast Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <PixelBlast
           variant="circle"
           pixelSize={6}
@@ -254,6 +256,14 @@ const Index = () => {
         </div>
       </div>
       
+      {/* ScrollVelocity Section */}
+      <div className="py-16">
+        <ScrollVelocity
+          texts={['Connect. Learn. Grow.', 'By Team Fi.']} 
+          velocity={velocity} 
+          className="custom-scroll-text"
+        />
+      </div>
       
       {/* MagicBento Section */}
       <div className="py-20 px-4">

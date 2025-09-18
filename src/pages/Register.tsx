@@ -10,6 +10,8 @@ import { Eye, EyeOff, GraduationCap, User, Upload, FileText } from "lucide-react
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import PixelBlast from '@/components/PixelBlast';
+import GlassSurface from '@/components/GlassSurface';
 
 export const Register = () => {
   const [formData, setFormData] = useState({
