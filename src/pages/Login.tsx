@@ -10,8 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import PixelBlast from '@/components/PixelBlast';
 import GlassSurface from '@/components/GlassSurface';
+import LightRays from '@/components/LightRays';
 import heroBg from "@/assets/hero-bg.jpg";
 
 export const Login = () => {
@@ -77,26 +77,19 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
-      {/* PixelBlast Background */}
-      <div className="fixed inset-0 z-0">
-        <PixelBlast
-          variant="circle"
-          pixelSize={6}
-          color="#B19EEF"
-          patternScale={3}
-          patternDensity={1.2}
-          pixelSizeJitter={0.5}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid
-          liquidStrength={0.12}
-          liquidRadius={1.2}
-          liquidWobbleSpeed={5}
-          speed={0.6}
-          edgeFade={0.25}
-          transparent
+      {/* LightRays Background */}
+      <div className="fixed inset-0 z-1">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1.5}
+          lightSpread={0.8}
+          rayLength={1.2}
+          followMouse={true}
+          mouseInfluence={0}
+          noiseAmount={0.1}
+          distortion={0.05}
+          className="custom-rays w-full h-full"
         />
       </div>
       
