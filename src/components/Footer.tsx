@@ -1,8 +1,8 @@
 export const Footer = () => {
   return (
-    <footer className="bg-background relative isolate">
-      <div className="mx-auto max-w-7xl overflow-hidden px-6 py-12 pb-20 sm:pb-12 lg:px-8">
-        <p className="mt-4 flex items-center justify-center text-center text-xs leading-5 text-gray-500 dark:text-gray-400 gap-1">
+    <footer className="bg-black relative isolate">
+      <div className="mx-auto max-w-7xl overflow-hidden px-6 py-4 lg:px-8">
+        <p className="flex items-center justify-center text-center text-xs leading-5 text-gray-400 gap-1">
           made with{" "}
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -265,42 +265,8 @@ const Index = () => {
         />
       </div>
       
-      {/* MagicBento Section */}
-      <div className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <MagicBento 
-            textAutoHide={true}
-            enableStars={true}
-            enableSpotlight={true}
-            enableBorderGlow={true}
-            enableTilt={true}
-            enableMagnetism={true}
-            clickEffect={true}
-            spotlightRadius={300}
-            particleCount={12}
-            glowColor="132, 0, 255"
-          />
-        </div>
-      </div>
+      
 
-      {/* CTA Section */}
-      <div className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-4">
-            Ready to Start Your Journey?
-          </h2>
-          <p className="text-lg text-text-secondary mb-8">
-            Join the community that's shaping the future of professional networking
-          </p>
-          <Button 
-            size="lg" 
-            className="btn-accent text-lg px-8 py-3"
-            onClick={() => navigate('/login')}
-          >
-            Get Started Today
-          </Button>
-        </div>
-      </div>
       
       {/* Footer */}
       <Footer />
