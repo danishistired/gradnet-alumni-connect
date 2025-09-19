@@ -15,7 +15,9 @@ import CreatePost from "./pages/CreatePost";
 import CreateCommunity from "./pages/CreateCommunity";
 import BlogDetail from "./pages/BlogDetail";
 import AdminPanel from "./pages/AdminPanel";
+import AdminPanelNew from "./pages/AdminPanelNew";
 import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
@@ -197,9 +199,11 @@ const App = () => {
                           </AlumniRoute>
                         } />
                         
-                        {/* Admin routes */}
-                        <Route path="/admin" element={<AdminLogin />} />
-                        <Route path="/admin-panel" element={<AdminPanel />} />
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin-panel" element={<AdminPanel />} />
+        <Route path="/admin-panel-new" element={<AdminPanelNew />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
                         
                         {/* Catch-all route for 404 */}
                         <Route path="*" element={<NotFound />} />

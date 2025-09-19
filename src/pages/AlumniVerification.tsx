@@ -69,7 +69,7 @@ export default function AlumniVerification() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar user={{ type: 'alumni', verified: false }} />
+      <Navbar />
       
       <div className="pt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Verification Alert */}

@@ -23,7 +23,7 @@ const AdminLogin = () => {
     if (username === 'admin' && password === 'admin') {
       // Store admin session
       localStorage.setItem('adminSession', 'true');
-      navigate('/admin-panel');
+      navigate('/admin-dashboard');
     } else {
       setError('Invalid username or password');
     }
