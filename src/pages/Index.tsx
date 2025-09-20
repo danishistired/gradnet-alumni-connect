@@ -265,23 +265,7 @@ const Index = () => {
         />
       </div>
       
-      {/* MagicBento Section */}
-      <div className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <MagicBento 
-            textAutoHide={true}
-            enableStars={true}
-            enableSpotlight={true}
-            enableBorderGlow={true}
-            enableTilt={true}
-            enableMagnetism={true}
-            clickEffect={true}
-            spotlightRadius={300}
-            particleCount={12}
-            glowColor="132, 0, 255"
-          />
-        </div>
-      </div>
+      
 
       {/* CTA Section */}
       <div className="py-20 px-4">
