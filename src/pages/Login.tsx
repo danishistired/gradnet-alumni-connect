@@ -146,53 +146,7 @@ export const Login = () => {
                   </div>
                 </div>
              </div>         
-          <div className="space-y-4 animate-slide-up">
-            <div className="text-center mb-4">
-              <h2 className="text-lg font-medium text-text-primary">
-                Sign in as {formData.accountType === 'student' ? 'Student' : 'Alumni'}
-              </h2>
-              {formData.accountType === 'alumni' && (
-                <p className="text-sm text-text-secondary mt-1">
-                  Use your personal email—university access is disabled after graduation
-                </p>
-              )}
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <Input
-                  type="email"
-                  placeholder={formData.accountType === 'student' ? 'your.name@cuchd.in' : 'your.email@gmail.com'}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={`input-field ${error && 'border-accent'}`}
-                />
-                {error && (
-                  <p className="text-sm text-accent mt-1">{error}</p>
-                )}
-              </div>
               
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="input-field"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 flex items-center pr-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5 text-text-secondary" />
-                  ) : (
-                    <Eye className="w-5 h-5 text-text-secondary" />
-                  )}
-                </button>
-              </div>
-             </form> 
               <div className="text-center mb-4">
                 <h2 className="text-lg font-medium text-white">
                   Sign in as {formData.accountType === 'student' ? 'Student' : 'Alumni'}
@@ -257,10 +211,9 @@ export const Login = () => {
                 </p>
               </div>
             </div>
-          </div>
-        </GlassSurface>
+          </GlassSurface>
+        </div>
       </div>
     </div>
-  </div>
   );
 };
