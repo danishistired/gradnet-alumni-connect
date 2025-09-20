@@ -19,6 +19,7 @@ import AdminPanel from "./pages/AdminPanel";
 import AdminPanelNew from "./pages/AdminPanelNew";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
@@ -209,6 +210,13 @@ const App = () => {
                         } />
                         
                         {/* Alumni-specific routes */}
+                        <Route path="/dashboard" element={
+                          <AlumniRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Dashboard />
+                            </div>
+                          </AlumniRoute>
+                        } />
                         <Route path="/verify" element={
                           <AlumniRoute>
                             <AlumniVerification />

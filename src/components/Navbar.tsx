@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut } from "lucide-react";
+import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut, BarChart3 } from "lucide-react";
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -268,6 +268,12 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </DropdownMenuItem>
+                    {user.accountType === 'alumni' && (
+                      <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
                       {t('nav.settings')}
