@@ -938,7 +938,7 @@
       "communityId": null,
       "image": null,
       "status": "published",
-      "likesCount": 0,
+      "likesCount": 1,
       "commentsCount": 0,
       "viewsCount": 0,
       "createdAt": "2025-09-20T08:59:45.838Z",
@@ -1386,6 +1386,12 @@
       "postId": "1757074917647",
       "userId": "1754647009619",
       "createdAt": "2025-09-05T12:34:17.861Z"
+    },
+    {
+      "id": "1758361353566",
+      "postId": "1758358785838",
+      "userId": "1754647009619",
+      "createdAt": "2025-09-20T09:42:33.566Z"
     }
   ],
   "commentLikes": [

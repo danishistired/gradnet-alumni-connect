@@ -103,7 +103,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 border-b border-border z-50 ${location.pathname === '/' ? 'bg-black' : 'bg-surface'}`}>
+    <nav className={`fixed top-0 left-0 right-0 border-b border-border z-50 ${location.pathname === '/' || location.pathname === '/about' || location.pathname === '/login' || location.pathname === '/register' ? 'bg-black' : 'bg-surface'}`}>
       <div className="w-full px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           
@@ -111,7 +111,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link to="/" className="flex-shrink-0">
               <img 
-                src={location.pathname === '/' ? logoSvg : newLogoSvg} 
+                src={location.pathname === '/' || location.pathname === '/about' || location.pathname === '/login' || location.pathname === '/register' ? logoSvg : newLogoSvg} 
                 alt="GRADNET Logo" 
                 className="h-12 w-auto" 
               />
