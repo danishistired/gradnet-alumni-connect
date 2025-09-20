@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/Navbar";
 import { GraduationCap, Users, MessageCircle, TrendingUp } from "lucide-react";
-import PixelBlast from '@/components/PixelBlast';
 import ScrambledText from '@/components/ScrambledText';
 
 const About = () => {
@@ -30,28 +29,6 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-black relative overflow-x-hidden">
-      {/* PixelBlast Background */}
-      <div className="fixed inset-0 z-0">
-        <PixelBlast
-          variant="circle"
-          pixelSize={6}
-          color="#B19EEF"
-          patternScale={3}
-          patternDensity={1.2}
-          pixelSizeJitter={0.5}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid
-          liquidStrength={0.12}
-          liquidRadius={1.2}
-          liquidWobbleSpeed={5}
-          speed={0.6}
-          edgeFade={0.25}
-          transparent
-        />
-      </div>
       
       {/* Content overlay */}
       <div className="relative z-10">
