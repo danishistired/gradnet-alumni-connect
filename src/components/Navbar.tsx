@@ -1,6 +1,5 @@
 import logoSvg from "../assets/logo.svg";
 import newLogoSvg from "../assets/new logo.svg";
-import { LanguageSelector } from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -155,7 +154,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     ref={homeRef}
                     to="/" 
                     className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
                     }`}
                   >
                     <Home className="w-4 h-4" />
@@ -165,7 +164,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     ref={aboutRef}
                     to="/about" 
                     className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      isActive('/about') ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/about') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
                     }`}
                   >
                     <Users className="w-4 h-4" />
@@ -212,8 +211,6 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           
           {/* Right Section: Actions + Profile */}
           <div className="flex items-center gap-4 flex-shrink-0">
-            {/* Language Selector */}
-            <LanguageSelector />
             
             {user && (
               <>
@@ -288,7 +285,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   // Special buttons for CU Questions page (prospective students)
                   <>
                     <Link to="/prospective-login">
-                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
+                      <Button variant="ghost" className={`${
+                        isActive('/prospective-login') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
+                      }`}>
                         Sign In
                       </Button>
                     </Link>
@@ -302,7 +301,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   // Regular buttons for other pages
                   <>
                     <Link to="/login">
-                      <Button variant="ghost" className="text-text-secondary hover:text-text-primary">
+                      <Button variant="ghost" className={`${
+                        isActive('/login') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
+                      }`}>
                         {t('nav.signIn')}
                       </Button>
                     </Link>
@@ -328,7 +329,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Link 
                     to="/" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -338,7 +339,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                   <Link 
                     to="/about" 
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      isActive('/about') ? 'bg-accent-light text-accent' : 'text-text-secondary hover:text-text-primary'
+                      isActive('/about') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -394,7 +395,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     // Special buttons for CU Questions page (prospective students)
                     <>
                       <Link to="/prospective-login" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
+                        <Button variant="ghost" className={`w-full justify-start ${
+                          isActive('/prospective-login') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
+                        }`}>
                           Sign In
                         </Button>
                       </Link>
@@ -408,7 +411,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                     // Regular buttons for other pages
                     <>
                       <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start text-text-secondary hover:text-text-primary">
+                        <Button variant="ghost" className={`w-full justify-start ${
+                          isActive('/login') ? 'text-black bg-gray-300' : 'text-white hover:text-gray-200'
+                        }`}>
                           {t('nav.signIn')}
                         </Button>
                       </Link>
