@@ -27,6 +27,7 @@ import { ProspectiveStudent } from "./pages/ProspectiveStudent";
 import { ProspectiveQuestions } from "./pages/ProspectiveQuestions";
 import { ProspectiveLogin } from "./pages/ProspectiveLogin";
 import { CUCommunity } from "./pages/CUCommunity";
+import { FundraiserPortal } from "./pages/FundraiserPortal";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
@@ -122,6 +123,19 @@ const App = () => {
                         <Route path="/communities" element={
                           <StudentAlumniRoute>
                             <AllCommunities />
+                          </StudentAlumniRoute>
+                        } />
+                        
+                        <Route path="/fundraisers" element={
+                          <StudentAlumniRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <FundraiserPortal />
+                                </div>
+                              </div>
+                            </div>
                           </StudentAlumniRoute>
                         } />
                         

@@ -72,6 +72,7 @@ export const Sidebar = () => {
     { icon: Home, label: 'Home', path: '/feed' },
     { icon: HelpCircle, label: 'CU Community', path: '/community-qa' },
     { icon: Users, label: 'All Communities', path: '/communities' },
+    { icon: TrendingUp, label: 'Fundraisers', path: '/fundraisers' },
   ];
 
   // Show top communities and joined ones
