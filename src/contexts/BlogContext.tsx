@@ -102,7 +102,7 @@ interface BlogProviderProps {
 }
 
 export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { moderateContent } = useContentModeration();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
@@ -280,11 +280,11 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
   };
 
   const addComment = async (postId: string, content: string, parentId?: string) => {
-    if (!token) {
+    if (!token || !user) {
       return { success: false, message: 'Not authenticated' };
     }
 
-    // Content moderation check
+    // Traditional content moderation check for comments
     const moderationResult = await moderateContent(content, 'comment');
     if (!moderationResult.allowed) {
       return { success: false, message: 'Comment blocked due to inappropriate content' };

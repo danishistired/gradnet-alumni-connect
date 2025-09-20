@@ -13,7 +13,8 @@ import { Navbar } from "@/components/Navbar";
 import { ApprovalStatusAlert } from "@/components/ApprovalStatusAlert";
 import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 import { Footer } from "@/components/Footer";
-import useContentModeration from "@/hooks/useContentModeration";
+import useAIContentModeration from "@/hooks/useAIContentModeration";
+import { ContentModerationWarningDialog } from "@/components/ContentModerationWarningDialog";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -22,7 +23,14 @@ const CreatePost = () => {
   const [searchParams] = useSearchParams();
   const { createPost } = useBlog();
   const { user } = useAuth();
-  const { moderateContent, isModeratingContent } = useContentModeration();
+  const {
+    moderationState,
+    analyzeContent,
+    proceedWithWarning,
+    blockContent,
+    publishContent,
+    resetModeration
+  } = useAIContentModeration();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -99,17 +107,38 @@ const CreatePost = () => {
       return;
     }
 
+    // First, analyze content with AI
+    const contentToAnalyze = `Title: ${formData.title}\n\nContent: ${formData.content}\n\nExcerpt: ${formData.excerpt || ''}`;
+    
+    try {
+      const aiResult = await analyzeContent(contentToAnalyze);
+      
+      // If AI suggests blocking, stop here
+      if (aiResult.suggestedAction === 'block') {
+        // The publishContent function will handle the blocking and alerts
+        await publishContent(contentToAnalyze, 'post', `post_${Date.now()}`);
+        return;
+      }
+      
+      // If AI suggests warning, show dialog - user will decide to proceed or not
+      if (aiResult.suggestedAction === 'warn') {
+        // Dialog will be shown automatically via moderationState.showWarningDialog
+        return;
+      }
+      
+      // If AI says it's appropriate, proceed with publishing
+      await proceedWithPublish();
+      
+    } catch (error) {
+      console.error('Content analysis failed:', error);
+      // If AI analysis fails, allow publishing but log the error
+      await proceedWithPublish();
+    }
+  };
+
+  const proceedWithPublish = async () => {
     setIsSubmitting(true);
     try {
-      // Content moderation check
-      const contentToModerate = `${formData.title}\n\n${formData.content}\n\n${formData.excerpt || ''}`;
-      const moderationResult = await moderateContent(contentToModerate, 'post');
-      
-      if (!moderationResult.allowed) {
-        setIsSubmitting(false);
-        return; // Block the post creation
-      }
-
       let imageBase64 = null;
       
       // Convert image to base64 if selected
@@ -127,6 +156,12 @@ const CreatePost = () => {
       const result = await createPost(postData);
 
       if (result.success) {
+        // Handle the content moderation alerts/warnings if needed
+        const contentToAnalyze = `Title: ${formData.title}\n\nContent: ${formData.content}\n\nExcerpt: ${formData.excerpt || ''}`;
+        await publishContent(contentToAnalyze, 'post', result.post?.id || `post_${Date.now()}`);
+        
+        resetModeration();
+        
         if (communityId && communityName) {
           navigate(`/g/${communityName}`);
         } else {
@@ -560,11 +595,11 @@ Respond with only the 3 tags separated by commas, nothing else:`,
             
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || isModeratingContent || !formData.title.trim() || !formData.content.trim()}
+              disabled={isSubmitting || moderationState.isAnalyzing || !formData.title.trim() || !formData.content.trim()}
               className="flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
-              {isModeratingContent ? 'Checking Content...' : isSubmitting ? 'Publishing...' : 'Publish Post'}
+              {moderationState.isAnalyzing ? 'Analyzing Content...' : isSubmitting ? 'Publishing...' : 'Publish Post'}
             </Button>
           </div>
 
@@ -968,6 +1003,21 @@ Respond with only the 3 tags separated by commas, nothing else:`,
         {/* Footer */}
         <Footer />
       </div>
+      
+      {/* Content Moderation Warning Dialog */}
+      {moderationState.result && (
+        <ContentModerationWarningDialog
+          isOpen={moderationState.showWarningDialog}
+          onClose={() => resetModeration()}
+          onProceed={() => {
+            proceedWithWarning();
+            proceedWithPublish();
+          }}
+          onCancel={() => blockContent()}
+          result={moderationState.result}
+          contentType="post"
+        />
+      )}
     </div>
   );
 };

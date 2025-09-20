@@ -93,9 +93,11 @@ class ContentModerationSystem {
     const lowercaseContent = content.toLowerCase();
     const detectedWords: string[] = [];
     
-    // Check for inappropriate words
+    // Check for inappropriate words using word boundaries
     inappropriateWords.forEach(word => {
-      if (lowercaseContent.includes(word.toLowerCase())) {
+      // Use word boundary regex to match complete words only
+      const wordRegex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
+      if (wordRegex.test(lowercaseContent)) {
         detectedWords.push(word);
       }
     });
