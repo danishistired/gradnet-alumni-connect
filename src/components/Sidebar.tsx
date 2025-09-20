@@ -110,38 +110,40 @@ export const Sidebar = () => {
 
       {/* My Communities */}
       {myJoinedCommunities.length > 0 && (
-        <div className="p-4">
+        <div className="px-4 py-2 max-h-48 flex flex-col">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             My Communities
           </h3>
-          <div className="space-y-1">
-            {myJoinedCommunities.map((community) => (
-              <Link
-                key={community.id}
-                to={`/g/${community.name}`}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors group",
-                  isActive(`/g/${community.name}`)
-                    ? "bg-accent text-accent-foreground"
-                    : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
-                )}
-              >
-                <Hash className="w-4 h-4 text-muted-foreground" />
-                <span className="truncate">{community.name}</span>
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {community.memberCount}
-                </Badge>
-              </Link>
-            ))}
-          </div>
+          <ScrollArea className="flex-1">
+            <div className="space-y-1 pr-4">
+              {myJoinedCommunities.map((community) => (
+                <Link
+                  key={community.id}
+                  to={`/g/${community.name}`}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors group",
+                    isActive(`/g/${community.name}`)
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                  )}
+                >
+                  <Hash className="w-4 h-4 text-muted-foreground" />
+                  <span className="truncate">{community.name}</span>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {community.memberCount}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       )}
 
       <Separator />
 
       {/* Popular Communities */}
-      <div className="flex-1 overflow-hidden">
-        <div className="p-4">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="p-4 pb-2">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Popular Communities
@@ -159,9 +161,11 @@ export const Sidebar = () => {
               )}
             </Button>
           </div>
+        </div>
 
+        <div className="flex-1 px-4 pb-4 min-h-0">
           <ScrollArea className="h-full">
-            <div className="space-y-1">
+            <div className="space-y-1 pr-4">
               {displayedCommunities.map((community) => (
                 <Link
                   key={community.id}
