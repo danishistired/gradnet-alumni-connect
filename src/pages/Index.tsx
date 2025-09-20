@@ -92,7 +92,7 @@ const Index = () => {
         {/* Left Column - Main Content */}
         <div className="relative z-10 max-w-4xl text-left flex-1 pr-8" style={{ marginTop: '100px' }}>
           <h1 className="text-9xl md:text-[12rem] font-bold text-white mb-8 animate-fade-in">
-            GRADNETttt
+            GRADNET
           </h1>
           
           <div className="text-xl text-white mb-8 max-w-2xl animate-fade-in">
