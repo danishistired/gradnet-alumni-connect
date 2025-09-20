@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -25,16 +27,39 @@ import {
   Eye,
   Check,
   X,
-  BarChart3
+  BarChart3,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Mail,
+  University
 } from 'lucide-react';
 import { mockAlumni, mockEvents, Alumni } from '@/data/mockAlumni';
 import AdminSidebar from '@/components/AdminSidebar';
+
+interface PendingUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  university: string;
+  graduationYear: string;
+  degree: string;
+  registrationDate: string;
+  proofDocument?: {
+    name: string;
+    url: string;
+    type: string;
+  };
+}
 
 const AdminDashboard = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Calculate statistics
   const totalAlumni = mockAlumni.length;
@@ -53,6 +78,94 @@ const AdminDashboard = () => {
     
     return matchesSearch && matchesDepartment && matchesStatus;
   });
+
+  // Load pending users for verification
+  const loadPendingUsers = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/pending-alumni');
+      const data = await response.json();
+      
+      if (data.success) {
+        const transformedUsers = data.pendingAlumni.map((user: any) => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          university: user.university,
+          graduationYear: user.graduationYear,
+          degree: user.degree || 'Computer Science',
+          registrationDate: new Date(user.createdAt).toLocaleDateString(),
+          proofDocument: user.proofDocument
+        }));
+        setPendingUsers(transformedUsers);
+      }
+    } catch (error) {
+      console.error('Error loading pending users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/approve-alumni/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+        alert('User approved successfully!');
+      } else {
+        alert('Error approving user: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+      alert('Error approving user. Please try again.');
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    try {
+      const reason = prompt('Please provide a reason for rejection (optional):');
+      
+      const response = await fetch(`http://localhost:5000/api/admin/reject-alumni/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setPendingUsers(prev => prev.filter(user => user.id !== userId));
+        alert('User rejected successfully!');
+      } else {
+        alert('Error rejecting user: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      alert('Error rejecting user. Please try again.');
+    }
+  };
+
+  const viewDocument = (document: { name: string; url: string; type: string }) => {
+    window.open(document.url, '_blank');
+  };
+
+  // Load pending users when verification tab is selected
+  React.useEffect(() => {
+    if (selectedTab === 'verification') {
+      loadPendingUsers();
+    }
+  }, [selectedTab]);
 
   const handleVerification = (alumniId: string, action: 'approve' | 'reject') => {
     // In real app, this would make an API call
@@ -314,15 +427,161 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="verification" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Verifications ({pendingVerifications})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AlumniTable alumni={mockAlumni.filter(a => a.verificationStatus === 'pending')} />
-              </CardContent>
-            </Card>
+          <TabsContent value="verification" className="space-y-6">
+            {isLoading ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">Loading pending verifications...</p>
+                </CardContent>
+              </Card>
+            ) : pendingUsers.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No pending requests</h3>
+                  <p className="text-muted-foreground">All alumni applications have been processed.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Pending Verifications ({pendingUsers.length})</h2>
+                  <Button onClick={loadPendingUsers} variant="outline">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+
+                {pendingUsers.map((user) => (
+                  <Card key={user.id} className="overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="w-12 h-12">
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {user.firstName[0]}{user.lastName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <CardTitle className="text-lg">
+                              {user.firstName} {user.lastName}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground flex items-center">
+                              <Mail className="w-4 h-4 mr-1" />
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                          Pending Review
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="p-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {/* User Information */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium flex items-center">
+                            <University className="w-4 h-4 mr-2" />
+                            Academic Information
+                          </h4>
+                          <div className="space-y-2 pl-6">
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">University:</span>
+                              <span className="text-sm font-medium">{user.university}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Degree:</span>
+                              <span className="text-sm font-medium">{user.degree}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Graduation Year:</span>
+                              <span className="text-sm font-medium">{user.graduationYear}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Applied:</span>
+                              <span className="text-sm font-medium flex items-center">
+                                <Calendar className="w-3 h-3 mr-1" />
+                                {user.registrationDate}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Document Verification */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium flex items-center">
+                            <FileText className="w-4 h-4 mr-2" />
+                            Verification Document
+                          </h4>
+                          {user.proofDocument ? (
+                            <div className="pl-6">
+                              <div className="bg-muted rounded-lg p-4 border">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {user.proofDocument.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground uppercase">
+                                      {user.proofDocument.type} document
+                                    </p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => viewDocument(user.proofDocument!)}
+                                    >
+                                      <Eye className="w-3 h-3 mr-1" />
+                                      View
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => window.open(user.proofDocument!.url)}
+                                    >
+                                      <Download className="w-3 h-3 mr-1" />
+                                      Download
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <Alert>
+                              <AlertDescription>
+                                No verification document uploaded
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleRejectUser(user.id)}
+                          className="text-destructive border-destructive/20 hover:bg-destructive/10"
+                        >
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Reject
+                        </Button>
+                        <Button
+                          onClick={() => handleApproveUser(user.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Approve Alumni
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="events" className="space-y-4">

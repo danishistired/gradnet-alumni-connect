@@ -126,10 +126,8 @@ export const Sidebar = () => {
                     : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
                 )}
               >
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                  {community.icon}
-                </div>
-                <span className="truncate">g/{community.name}</span>
+                <Hash className="w-4 h-4 text-muted-foreground" />
+                <span className="truncate">{community.name}</span>
                 <Badge variant="secondary" className="ml-auto text-xs">
                   {community.memberCount}
                 </Badge>
@@ -175,11 +173,9 @@ export const Sidebar = () => {
                       : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
                   )}
                 >
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                    {community.icon}
-                  </div>
+                  <Hash className="w-4 h-4 text-muted-foreground" />
                   <div className="flex-1 min-w-0">
-                    <div className="truncate">g/{community.name}</div>
+                    <div className="truncate">{community.name}</div>
                     <div className="text-xs text-muted-foreground truncate">
                       {community.memberCount} members
                     </div>
