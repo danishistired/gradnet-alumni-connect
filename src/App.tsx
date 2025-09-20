@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import About from "./pages/About";
+import TestLogo from "./pages/TestLogo";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -53,6 +54,7 @@ const App = () => {
                         {/* Public routes - accessible to everyone */}
                         <Route path="/" element={<Index />} />
                         <Route path="/about" element={<About />} />
+                        <Route path="/test-logo" element={<TestLogo />} />
                         <Route path="/cu-questions" element={<ProspectiveQuestions />} />
                         
                         {/* Guest-only routes - redirect authenticated users */}
