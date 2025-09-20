@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -35,6 +36,7 @@ import {
   University
 } from 'lucide-react';
 import { mockAlumni, mockEvents, Alumni } from '@/data/mockAlumni';
+import { getAlumniFromDatabase, getPendingUsersFromDatabase, getDatabaseStatistics, fetchDatabaseData } from '@/utils/databaseUtils';
 import AdminSidebar from '@/components/AdminSidebar';
 
 interface PendingUser {
@@ -59,16 +61,71 @@ const AdminDashboard = () => {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+  const [alumniData, setAlumniData] = useState<Alumni[]>([]);
+  const [statistics, setStatistics] = useState({
+    totalAlumni: 0,
+    approvedAlumni: 0,
+    pendingVerifications: 0,
+    rejectedAlumni: 0,
+    uniqueCompanies: 0,
+    totalStudents: 0,
+    totalUsers: 0,
+    totalPosts: 0
+  });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Calculate statistics
-  const totalAlumni = mockAlumni.length;
-  const pendingVerifications = mockAlumni.filter(a => a.verificationStatus === 'pending').length;
-  const approvedAlumni = mockAlumni.filter(a => a.verificationStatus === 'approved').length;
-  const uniqueCompanies = new Set(mockAlumni.map(a => a.company)).size;
+  // Load data from database.json
+  const loadDatabaseData = async () => {
+    setIsLoading(true);
+    try {
+      const [alumni, pending, stats] = await Promise.all([
+        getAlumniFromDatabase(),
+        getPendingUsersFromDatabase(),
+        getDatabaseStatistics()
+      ]);
+      
+      setAlumniData(alumni);
+      setPendingUsers(pending);
+      setStatistics(stats);
+    } catch (error) {
+      console.error('Error loading database data:', error);
+      // Fallback to mock data if database loading fails
+      setAlumniData(mockAlumni);
+      setStatistics({
+        totalAlumni: mockAlumni.length,
+        approvedAlumni: mockAlumni.filter(a => a.verificationStatus === 'approved').length,
+        pendingVerifications: mockAlumni.filter(a => a.verificationStatus === 'pending').length,
+        rejectedAlumni: mockAlumni.filter(a => a.verificationStatus === 'rejected').length,
+        uniqueCompanies: new Set(mockAlumni.map(a => a.company)).size,
+        totalStudents: 0,
+        totalUsers: mockAlumni.length,
+        totalPosts: 0
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load data on component mount and when tab changes
+  useEffect(() => {
+    loadDatabaseData();
+  }, []);
+
+  // Load pending users when verification tab is selected
+  useEffect(() => {
+    if (selectedTab === 'verification') {
+      loadPendingUsers();
+    }
+  }, [selectedTab]);
+
+  // Calculate statistics from current data
+  const totalAlumni = statistics.totalAlumni;
+  const pendingVerifications = statistics.pendingVerifications;
+  const approvedAlumni = statistics.approvedAlumni;
+  const uniqueCompanies = statistics.uniqueCompanies;
 
   // Filter alumni based on search and filters
-  const filteredAlumni = mockAlumni.filter(alumni => {
+  const filteredAlumni = alumniData.filter(alumni => {
     const matchesSearch = alumni.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          alumni.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          alumni.company.toLowerCase().includes(searchTerm.toLowerCase());
@@ -83,25 +140,37 @@ const AdminDashboard = () => {
   const loadPendingUsers = async () => {
     setIsLoading(true);
     try {
+      // Try to fetch from API first (if backend server is running)
       const response = await fetch('http://localhost:5000/api/admin/pending-alumni');
-      const data = await response.json();
-      
-      if (data.success) {
-        const transformedUsers = data.pendingAlumni.map((user: any) => ({
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          university: user.university,
-          graduationYear: user.graduationYear,
-          degree: user.degree || 'Computer Science',
-          registrationDate: new Date(user.createdAt).toLocaleDateString(),
-          proofDocument: user.proofDocument
-        }));
-        setPendingUsers(transformedUsers);
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success) {
+          const transformedUsers = data.pendingAlumni.map((user: any) => ({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            university: user.university,
+            graduationYear: user.graduationYear,
+            degree: user.degree || 'Computer Science',
+            registrationDate: new Date(user.createdAt).toLocaleDateString(),
+            proofDocument: user.proofDocument
+          }));
+          setPendingUsers(transformedUsers);
+        }
+      } else {
+        throw new Error('API not available, using database.json');
       }
     } catch (error) {
-      console.error('Error loading pending users:', error);
+      console.log('API not available, loading from database.json:', error);
+      // Fallback to database.json
+      try {
+        const pendingFromDatabase = await getPendingUsersFromDatabase();
+        setPendingUsers(pendingFromDatabase);
+      } catch (dbError) {
+        console.error('Error loading from database.json:', dbError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -172,9 +241,247 @@ const AdminDashboard = () => {
     console.log(`${action} alumni with ID: ${alumniId}`);
   };
 
-  const handleExportData = () => {
-    // In real app, this would generate and download CSV/Excel
-    console.log('Exporting alumni data...');
+  const handleExportData = async (exportAll = false) => {
+    try {
+      // Show loading state
+      setIsLoading(true);
+      
+      // Get fresh data from database if exporting all
+      const dataToExport = exportAll ? await getAlumniFromDatabase() : filteredAlumni;
+      
+      if (dataToExport.length === 0) {
+        alert('No alumni data to export.');
+        return;
+      }
+
+      // Enhanced CSV headers with more database fields
+      const csvHeaders = [
+        'ID',
+        'Name',
+        'First Name',
+        'Last Name', 
+        'Email',
+        'Department',
+        'Company',
+        'Job Title',
+        'Graduation Year',
+        'Location',
+        'Verification Status',
+        'Registration Date',
+        'Bio',
+        'Skills',
+        'LinkedIn',
+        'GitHub',
+        'Website',
+        'University'
+      ];
+
+      // Convert alumni data to CSV format with actual database fields
+      const csvData = dataToExport.map(alumni => [
+        alumni.id,
+        alumni.name,
+        alumni.name.split(' ')[0] || '', // First name
+        alumni.name.split(' ').slice(1).join(' ') || '', // Last name
+        alumni.email,
+        alumni.department,
+        alumni.company,
+        alumni.currentJobTitle || alumni.jobTitle || '',
+        alumni.graduationYear,
+        alumni.location,
+        alumni.verificationStatus,
+        alumni.registrationDate || new Date().toLocaleDateString(),
+        alumni.bio || '',
+        Array.isArray(alumni.skills) ? alumni.skills.join('; ') : '',
+        alumni.linkedIn || '',
+        alumni.github || '',
+        alumni.website || '',
+        'Chandigarh University' // Default university
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvData.map(row => row.map(field => 
+          // Escape commas and quotes in CSV fields
+          typeof field === 'string' && (field.includes(',') || field.includes('"')) 
+            ? `"${field.replace(/"/g, '""')}"` 
+            : field
+        ).join(','))
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        const fileName = exportAll 
+          ? `all_alumni_data_${new Date().toISOString().split('T')[0]}.csv`
+          : `filtered_alumni_data_${new Date().toISOString().split('T')[0]}.csv`;
+        link.setAttribute('href', url);
+        link.setAttribute('download', fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        const exportType = exportAll ? 'All alumni' : 'Filtered alumni';
+        alert(`${exportType} data (${dataToExport.length} records) exported successfully!`);
+      } else {
+        throw new Error('Download not supported in this browser');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Error exporting data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportPendingUsers = () => {
+    try {
+      if (pendingUsers.length === 0) {
+        alert('No pending users to export.');
+        return;
+      }
+
+      // Prepare CSV data for pending users
+      const csvHeaders = [
+        'First Name',
+        'Last Name',
+        'Email',
+        'University',
+        'Graduation Year',
+        'Degree',
+        'Registration Date',
+        'Has Proof Document'
+      ];
+
+      // Convert pending users data to CSV format
+      const csvData = pendingUsers.map(user => [
+        user.firstName,
+        user.lastName,
+        user.email,
+        user.university,
+        user.graduationYear,
+        user.degree,
+        user.registrationDate,
+        user.proofDocument ? 'Yes' : 'No'
+      ]);
+
+      // Create CSV content
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvData.map(row => row.map(field => 
+          // Escape commas and quotes in CSV fields
+          typeof field === 'string' && (field.includes(',') || field.includes('"')) 
+            ? `"${field.replace(/"/g, '""')}"` 
+            : field
+        ).join(','))
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `pending_users_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        alert('Pending users data exported successfully!');
+      } else {
+        throw new Error('Download not supported in this browser');
+      }
+    } catch (error) {
+      console.error('Error exporting pending users data:', error);
+      alert('Error exporting pending users data. Please try again.');
+    }
+  };
+
+  // Export all user data (alumni and students)
+  const handleExportAllUsers = async () => {
+    try {
+      setIsLoading(true);
+      const allUsersData = await fetchDatabaseData();
+      
+      if (allUsersData.users.length === 0) {
+        alert('No user data to export.');
+        return;
+      }
+
+      const csvHeaders = [
+        'ID',
+        'First Name',
+        'Last Name',
+        'Email',
+        'Account Type',
+        'University',
+        'Graduation Year',
+        'Company',
+        'Job Title',
+        'Location',
+        'Registration Date',
+        'Approval Status',
+        'Bio',
+        'Skills'
+      ];
+
+      const csvData = allUsersData.users.map(user => [
+        user.id,
+        user.firstName,
+        user.lastName,
+        user.email,
+        user.accountType,
+        user.university,
+        user.graduationYear,
+        user.company || '',
+        user.jobTitle || '',
+        user.location || '',
+        new Date(user.createdAt).toLocaleDateString(),
+        user.accountType === 'alumni' ? 
+          (user.isApproved === true ? 'Approved' : 
+           user.isApproved === false ? 'Rejected' : 'Pending') : 
+          'N/A',
+        user.bio || '',
+        Array.isArray(user.skills) ? user.skills.join('; ') : ''
+      ]);
+
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvData.map(row => row.map(field => 
+          typeof field === 'string' && (field.includes(',') || field.includes('"')) 
+            ? `"${field.replace(/"/g, '""')}"` 
+            : field
+        ).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `all_users_data_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`All users data (${allUsersData.users.length} records) exported successfully!`);
+      }
+    } catch (error) {
+      console.error('Error exporting all users data:', error);
+      alert('Error exporting all users data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
@@ -263,10 +570,41 @@ const AdminDashboard = () => {
             <h1 className="text-3xl font-bold">Institution Admin Portal</h1>
             <p className="text-muted-foreground">Manage your alumni network</p>
           </div>
-          <Button onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={loadDatabaseData} variant="outline">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Refresh Data
+            </Button>
+            
+            {/* Export Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Data
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => handleExportData(false)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Filtered Alumni
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportData(true)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export All Alumni
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportAllUsers}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export All Users
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPendingUsers}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Pending Users
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
@@ -303,6 +641,28 @@ const AdminDashboard = () => {
                 value={uniqueCompanies} 
                 icon={Building} 
                 color="text-purple-600" 
+              />
+            </div>
+
+            {/* Additional Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard 
+                title="Total Students" 
+                value={statistics.totalStudents} 
+                icon={University} 
+                color="text-indigo-600" 
+              />
+              <StatCard 
+                title="Total Users" 
+                value={statistics.totalUsers} 
+                icon={Users} 
+                color="text-gray-600" 
+              />
+              <StatCard 
+                title="Total Posts" 
+                value={statistics.totalPosts} 
+                icon={FileText} 
+                color="text-orange-600" 
               />
             </div>
 
@@ -447,10 +807,16 @@ const AdminDashboard = () => {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Pending Verifications ({pendingUsers.length})</h2>
-                  <Button onClick={loadPendingUsers} variant="outline">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleExportPendingUsers} variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export Pending
+                    </Button>
+                    <Button onClick={loadPendingUsers} variant="outline">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
                 </div>
 
                 {pendingUsers.map((user) => (
