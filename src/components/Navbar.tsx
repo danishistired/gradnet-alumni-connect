@@ -1,4 +1,5 @@
-import { Logo } from "./Logo";
+import logoSvg from "../assets/logo.svg";
+import newLogoSvg from "../assets/new logo.svg";
 import { LanguageSelector } from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTranslation } from 'react-i18next';
+
 
 interface NavbarProps {
   onMessagesClick?: () => void;
@@ -109,7 +111,11 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
           {/* Left Section: Logo + Search */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link to="/" className="flex-shrink-0">
-              <Logo />
+              <img 
+                src={location.pathname === '/' ? logoSvg : newLogoSvg} 
+                alt="GRADNET Logo" 
+                className="h-12 w-auto" 
+              />
             </Link>
             
             {/* Search Bar - only show for authenticated users */}

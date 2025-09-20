@@ -925,6 +925,25 @@
       "createdAt": "2025-09-05T12:37:55.012Z",
       "updatedAt": "2025-09-05T12:37:55.012Z",
       "publishedAt": "2025-09-05T12:37:55.012Z"
+    },
+    {
+      "id": "1758358785838",
+      "authorId": "1754648939266",
+      "title": "balle balle",
+      "content": "balle balle",
+      "excerpt": "balle balle",
+      "tags": [],
+      "category": "general",
+      "targetAudience": "both",
+      "communityId": null,
+      "image": null,
+      "status": "published",
+      "likesCount": 0,
+      "commentsCount": 0,
+      "viewsCount": 0,
+      "createdAt": "2025-09-20T08:59:45.838Z",
+      "updatedAt": "2025-09-20T08:59:45.838Z",
+      "publishedAt": "2025-09-20T08:59:45.838Z"
     }
   ],
   "comments": [
