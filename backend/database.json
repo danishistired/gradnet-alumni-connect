@@ -290,6 +290,28 @@
       "updatedAt": "2025-08-11T19:53:33.624Z",
       "isApproved": true,
       "rejectionReason": "No reason provided"
+    },
+    {
+      "id": "1758363659065",
+      "firstName": "ANkit ",
+      "lastName": "Kumar",
+      "email": "ankitboora123an@gmail.com",
+      "password": "$2a$10$W0aPVJiGJ3o107bgKYH8LeXtA5EuemrZ2/BRvqIp0mN4pUmqxcrhe",
+      "accountType": "alumni",
+      "university": "jnsgjnk",
+      "graduationYear": "11",
+      "profilePicture": null,
+      "bio": "",
+      "skills": [],
+      "company": "gfdthj",
+      "jobTitle": "",
+      "linkedIn": "",
+      "github": "",
+      "website": "",
+      "location": "",
+      "createdAt": "2025-09-20T10:20:59.065Z",
+      "updatedAt": "2025-09-20T10:26:21.037Z",
+      "isApproved": true
     }
   ],
   "posts": [

@@ -2123,6 +2123,23 @@ initializeDB().then(async () => {
     }
   });
 
+  // Get all users data for admin dashboard
+  app.get('/api/admin/all-users', async (req, res) => {
+    try {
+      const db = await readDB();
+      
+      res.json({
+        success: true,
+        users: db.users,
+        posts: db.posts || [],
+        communities: db.communities || []
+      });
+    } catch (error) {
+      console.error('Error fetching all users data:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch all users data' });
+    }
+  });
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });

@@ -29,12 +29,28 @@ export interface DatabaseData {
   communities: any[];
 }
 
-// Function to read data from database.json in public folder
+// Function to read data from backend API or database.json fallback
 export const fetchDatabaseData = async (): Promise<DatabaseData> => {
   try {
+    // First try to fetch from the backend API
+    const apiResponse = await fetch('http://localhost:5000/api/admin/all-users');
+    if (apiResponse.ok) {
+      const apiData = await apiResponse.json();
+      if (apiData.success) {
+        // Transform API response to match expected format
+        return {
+          users: apiData.users || [],
+          posts: apiData.posts || [],
+          communities: apiData.communities || []
+        };
+      }
+    }
+    
+    // Fallback to static database.json file
+    console.log('API not available, falling back to static database.json');
     const response = await fetch('/database.json');
     if (!response.ok) {
-      throw new Error('Failed to fetch database data');
+      throw new Error('Failed to fetch database data from both API and static file');
     }
     const data = await response.json();
     return data;
