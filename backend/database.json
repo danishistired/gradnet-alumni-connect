@@ -312,6 +312,28 @@
       "createdAt": "2025-09-20T10:20:59.065Z",
       "updatedAt": "2025-09-20T10:26:21.037Z",
       "isApproved": true
+    },
+    {
+      "id": "1758365997711",
+      "firstName": "Varun ",
+      "lastName": "Gupta",
+      "email": "varun@gmail.com",
+      "password": "$2a$10$/1QdytpVNV9Rmo1emhh0UesSv0gfDyJbmJLI4LAqjO6wFxXc4LFRW",
+      "accountType": "alumni",
+      "university": "Chandigarh University",
+      "graduationYear": "2028",
+      "profilePicture": null,
+      "bio": "",
+      "skills": [],
+      "company": "",
+      "jobTitle": "",
+      "linkedIn": "",
+      "github": "",
+      "website": "",
+      "location": "",
+      "createdAt": "2025-09-20T10:59:57.711Z",
+      "updatedAt": "2025-09-20T10:59:57.711Z",
+      "isApproved": false
     }
   ],
   "posts": [

@@ -84,7 +84,14 @@ const AdminDashboard = () => {
         getDatabaseStatistics()
       ]);
       
-      setAlumniData(alumni);
+      // Transform alumni data to ensure correct types
+      const transformedAlumni = alumni.map((alumnus: any) => ({
+        ...alumnus,
+        graduationYear: typeof alumnus.graduationYear === 'string' ? 
+          parseInt(alumnus.graduationYear) : alumnus.graduationYear
+      }));
+      
+      setAlumniData(transformedAlumni);
       setPendingUsers(pending);
       setStatistics(stats);
     } catch (error) {
@@ -247,7 +254,14 @@ const AdminDashboard = () => {
       setIsLoading(true);
       
       // Get fresh data from database if exporting all
-      const dataToExport = exportAll ? await getAlumniFromDatabase() : filteredAlumni;
+      const rawData = exportAll ? await getAlumniFromDatabase() : filteredAlumni;
+      
+      // Transform data to ensure correct types
+      const dataToExport = rawData.map((alumnus: any) => ({
+        ...alumnus,
+        graduationYear: typeof alumnus.graduationYear === 'string' ? 
+          parseInt(alumnus.graduationYear) : alumnus.graduationYear
+      }));
       
       if (dataToExport.length === 0) {
         alert('No alumni data to export.');

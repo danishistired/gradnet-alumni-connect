@@ -1,5 +1,6 @@
 import logoSvg from "../assets/logo.svg";
 import newLogoSvg from "../assets/new logo.svg";
+import { LanguageSelector } from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -227,6 +228,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
 
                 {/* Action Buttons */}
                 <div className="hidden sm:flex items-center gap-3">
+                  {/* Language Selector - only show on feed page */}
+                  {location.pathname === '/feed' && <LanguageSelector />}
+
                   {/* Notifications Dropdown */}
                   <NotificationsDropdown />
 
