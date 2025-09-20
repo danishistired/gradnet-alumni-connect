@@ -13,6 +13,7 @@ import { Navbar } from "@/components/Navbar";
 import { ApprovalStatusAlert } from "@/components/ApprovalStatusAlert";
 import { ArrowLeft, Save, Eye, X, Hash, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import useContentModeration from "@/hooks/useContentModeration";
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -21,6 +22,7 @@ const CreatePost = () => {
   const [searchParams] = useSearchParams();
   const { createPost } = useBlog();
   const { user } = useAuth();
+  const { moderateContent, isModeratingContent } = useContentModeration();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [communityId, setCommunityId] = useState<string | null>(null);
@@ -99,6 +101,15 @@ const CreatePost = () => {
 
     setIsSubmitting(true);
     try {
+      // Content moderation check
+      const contentToModerate = `${formData.title}\n\n${formData.content}\n\n${formData.excerpt || ''}`;
+      const moderationResult = await moderateContent(contentToModerate, 'post');
+      
+      if (!moderationResult.allowed) {
+        setIsSubmitting(false);
+        return; // Block the post creation
+      }
+
       let imageBase64 = null;
       
       // Convert image to base64 if selected
@@ -549,11 +560,11 @@ Respond with only the 3 tags separated by commas, nothing else:`,
             
             <Button 
               onClick={handleSubmit} 
-              disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
+              disabled={isSubmitting || isModeratingContent || !formData.title.trim() || !formData.content.trim()}
               className="flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
-              {isSubmitting ? 'Publishing...' : 'Publish Post'}
+              {isModeratingContent ? 'Checking Content...' : isSubmitting ? 'Publishing...' : 'Publish Post'}
             </Button>
           </div>
 

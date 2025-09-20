@@ -19,6 +19,7 @@ import AdminPanel from "./pages/AdminPanel";
 import AdminPanelNew from "./pages/AdminPanelNew";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ModerationDemo from "./pages/ModerationDemo";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
@@ -228,6 +229,7 @@ const App = () => {
         <Route path="/admin-panel" element={<AdminPanel />} />
         <Route path="/admin-panel-new" element={<AdminPanelNew />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/moderation-demo" element={<ModerationDemo />} />
                         
                         {/* Catch-all route for 404 */}
                         <Route path="*" element={<NotFound />} />

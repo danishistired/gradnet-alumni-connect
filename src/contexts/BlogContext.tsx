@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { useContentModeration } from '@/hooks/useContentModeration';
 
 interface Author {
   id: string;
@@ -102,6 +103,7 @@ interface BlogProviderProps {
 
 export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
   const { token } = useAuth();
+  const { moderateContent } = useContentModeration();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
@@ -280,6 +282,12 @@ export const BlogProvider: React.FC<BlogProviderProps> = ({ children }) => {
   const addComment = async (postId: string, content: string, parentId?: string) => {
     if (!token) {
       return { success: false, message: 'Not authenticated' };
+    }
+
+    // Content moderation check
+    const moderationResult = await moderateContent(content, 'comment');
+    if (!moderationResult.allowed) {
+      return { success: false, message: 'Comment blocked due to inappropriate content' };
     }
 
     try {

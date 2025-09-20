@@ -33,11 +33,13 @@ import {
   XCircle,
   FileText,
   Mail,
-  University
+  University,
+  Shield
 } from 'lucide-react';
 import { mockAlumni, mockEvents, Alumni } from '@/data/mockAlumni';
 import { getAlumniFromDatabase, getPendingUsersFromDatabase, getDatabaseStatistics, fetchDatabaseData } from '@/utils/databaseUtils';
 import AdminSidebar from '@/components/AdminSidebar';
+import ContentModerationPanel from '@/components/ContentModerationPanel';
 
 interface PendingUser {
   id: string;
@@ -622,10 +624,11 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="alumni">Alumni Management</TabsTrigger>
             <TabsTrigger value="verification">Verification Queue</TabsTrigger>
+            <TabsTrigger value="moderation">Content Moderation</TabsTrigger>
             <TabsTrigger value="events">Events</TabsTrigger>
           </TabsList>
 
@@ -962,6 +965,22 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="moderation" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <Shield className="h-6 w-6" />
+                  Content Moderation
+                </h2>
+                <p className="text-muted-foreground">
+                  Monitor and review flagged content, manage user warnings
+                </p>
+              </div>
+            </div>
+
+            <ContentModerationPanel />
           </TabsContent>
 
           <TabsContent value="events" className="space-y-4">

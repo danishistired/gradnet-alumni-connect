@@ -830,7 +830,7 @@
       "image": null,
       "status": "published",
       "likesCount": 1,
-      "commentsCount": 3,
+      "commentsCount": 6,
       "viewsCount": 0,
       "createdAt": "2025-09-05T12:12:33.032Z",
       "updatedAt": "2025-09-05T12:12:33.032Z",
@@ -849,7 +849,7 @@
       "image": null,
       "status": "published",
       "likesCount": 1,
-      "commentsCount": 0,
+      "commentsCount": 6,
       "viewsCount": 0,
       "createdAt": "2025-09-20T08:59:45.838Z",
       "updatedAt": "2025-09-20T08:59:45.838Z",
@@ -1065,6 +1065,96 @@
       "parentId": null,
       "createdAt": "2025-09-05T12:36:06.873Z",
       "updatedAt": "2025-09-05T12:36:06.873Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758409891376",
+      "postId": "1758358785838",
+      "authorId": "1754647009619",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:11:31.376Z",
+      "updatedAt": "2025-09-20T23:11:31.376Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758409925398",
+      "postId": "1758358785838",
+      "authorId": "1754647009619",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:12:05.398Z",
+      "updatedAt": "2025-09-20T23:12:05.398Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758409935219",
+      "postId": "1757074353032",
+      "authorId": "1754647009619",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:12:15.219Z",
+      "updatedAt": "2025-09-20T23:12:15.219Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410365352",
+      "postId": "1758358785838",
+      "authorId": "1754647009619",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:19:25.352Z",
+      "updatedAt": "2025-09-20T23:19:25.352Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410390412",
+      "postId": "1758358785838",
+      "authorId": "1754888871276",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:19:50.412Z",
+      "updatedAt": "2025-09-20T23:19:50.412Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410455583",
+      "postId": "1757074353032",
+      "authorId": "1754888871276",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:20:55.583Z",
+      "updatedAt": "2025-09-20T23:20:55.583Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410624480",
+      "postId": "1757074353032",
+      "authorId": "1754888871276",
+      "content": "hell",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:23:44.480Z",
+      "updatedAt": "2025-09-20T23:23:44.480Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410657735",
+      "postId": "1758358785838",
+      "authorId": "1754888871276",
+      "content": "kill",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:24:17.735Z",
+      "updatedAt": "2025-09-20T23:24:17.735Z",
+      "likesCount": 0
+    },
+    {
+      "id": "1758410831517",
+      "postId": "1758358785838",
+      "authorId": "1754647009619",
+      "content": "hell",
+      "parentId": null,
+      "createdAt": "2025-09-20T23:27:11.517Z",
+      "updatedAt": "2025-09-20T23:27:11.517Z",
       "likesCount": 0
     }
   ],
