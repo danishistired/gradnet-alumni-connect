@@ -67,7 +67,9 @@ export const FundraiserForm = ({ onClose }: FundraiserFormProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -80,15 +82,52 @@ export const FundraiserForm = ({ onClose }: FundraiserFormProps) => {
       return;
     }
 
-    // Simulate submission
-    toast({
-      title: "Fundraiser Created Successfully!",
-      description: "Your fundraiser has been submitted for review. Alumni will be able to view and invest once approved.",
-    });
+    try {
+      setIsSubmitting(true);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please login to create a fundraiser.",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    setTimeout(() => {
-      onClose();
-    }, 2000);
+      const response = await fetch('http://localhost:5000/api/fundraisers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        toast({
+          title: "Fundraiser Created Successfully!",
+          description: "Your fundraiser is now live and alumni can start investing.",
+        });
+        
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      } else {
+        throw new Error(data.message || 'Failed to create fundraiser');
+      }
+    } catch (error) {
+      console.error('Error creating fundraiser:', error);
+      toast({
+        title: "Error Creating Fundraiser",
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -372,11 +411,11 @@ export const FundraiserForm = ({ onClose }: FundraiserFormProps) => {
 
       {/* Submit Button */}
       <div className="flex justify-end gap-4">
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">
-          Submit Fundraiser
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating Fundraiser...' : 'Submit Fundraiser'}
         </Button>
       </div>
     </form>

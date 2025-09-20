@@ -35,7 +35,9 @@ async function initializeDB() {
       communityMembers: [],
       questions: [],
       answers: [],
-      helpfulMarks: []
+      helpfulMarks: [],
+      fundraisers: [],
+      investments: []
     }, null, 2));
   }
 }
@@ -56,10 +58,15 @@ async function readDB() {
     if (!db.notifications) db.notifications = [];
     if (!db.communities) db.communities = [];
     if (!db.communityMembers) db.communityMembers = [];
+    if (!db.questions) db.questions = [];
+    if (!db.answers) db.answers = [];
+    if (!db.helpfulMarks) db.helpfulMarks = [];
+    if (!db.fundraisers) db.fundraisers = [];
+    if (!db.investments) db.investments = [];
     
     return db;
   } catch (error) {
-    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [], notifications: [], communities: [], communityMembers: [] };
+    return { users: [], posts: [], comments: [], likes: [], commentLikes: [], follows: [], notifications: [], communities: [], communityMembers: [], questions: [], answers: [], helpfulMarks: [], fundraisers: [], investments: [] };
   }
 }
 
@@ -2137,6 +2144,286 @@ initializeDB().then(async () => {
     } catch (error) {
       console.error('Error fetching all users data:', error);
       res.status(500).json({ success: false, message: 'Failed to fetch all users data' });
+    }
+  });
+
+  // =================== FUNDRAISER ENDPOINTS ===================
+
+  // Get all fundraisers
+  app.get('/api/fundraisers', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const { status, category } = req.query;
+      
+      let fundraisers = db.fundraisers || [];
+      
+      // Filter by status if provided
+      if (status && status !== 'all') {
+        fundraisers = fundraisers.filter(f => f.status === status);
+      }
+      
+      // Filter by category if provided
+      if (category && category !== 'all') {
+        fundraisers = fundraisers.filter(f => f.category === category);
+      }
+      
+      // Add calculated fields
+      const fundraisersWithDetails = fundraisers.map(fundraiser => {
+        const investments = db.investments?.filter(inv => inv.fundraiserId === fundraiser.id) || [];
+        const investorsCount = new Set(investments.map(inv => inv.investorEmail)).size;
+        const raisedAmount = investments.reduce((sum, inv) => sum + inv.amount, 0);
+        
+        return {
+          ...fundraiser,
+          investorsCount,
+          raisedAmount: Math.min(raisedAmount, fundraiser.targetAmount) // Cap at target
+        };
+      });
+      
+      res.json({
+        success: true,
+        fundraisers: fundraisersWithDetails
+      });
+    } catch (error) {
+      console.error('Error fetching fundraisers:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch fundraisers' });
+    }
+  });
+
+  // Create new fundraiser (students only)
+  app.post('/api/fundraisers', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const user = db.users.find(u => u.id === req.user.userId);
+      
+      if (!user || user.accountType !== 'student') {
+        return res.status(403).json({ success: false, message: 'Only students can create fundraisers' });
+      }
+
+      const {
+        title,
+        description,
+        category,
+        targetAmount,
+        fundingGoal,
+        businessModel,
+        marketSize,
+        competition,
+        teamSize,
+        timeline,
+        riskAssessment,
+        tags,
+        pitchDeck,
+        businessPlan,
+        financialProjections
+      } = req.body;
+
+      const fundraiser = {
+        id: Date.now().toString(),
+        title,
+        description,
+        studentName: `${user.firstName} ${user.lastName}`,
+        studentEmail: user.email,
+        category,
+        targetAmount: parseFloat(targetAmount),
+        raisedAmount: 0,
+        fundingGoal,
+        businessModel,
+        marketSize,
+        competition,
+        teamSize: parseInt(teamSize),
+        timeline,
+        riskAssessment,
+        investorsCount: 0,
+        createdAt: new Date().toISOString(),
+        status: 'active',
+        tags: tags || [],
+        pitchDeck,
+        businessPlan,
+        financialProjections
+      };
+
+      db.fundraisers = db.fundraisers || [];
+      db.fundraisers.push(fundraiser);
+      
+      await writeDB(db);
+
+      res.json({
+        success: true,
+        message: 'Fundraiser created successfully',
+        fundraiser
+      });
+    } catch (error) {
+      console.error('Error creating fundraiser:', error);
+      res.status(500).json({ success: false, message: 'Failed to create fundraiser' });
+    }
+  });
+
+  // Get single fundraiser
+  app.get('/api/fundraisers/:id', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const fundraiser = db.fundraisers?.find(f => f.id === req.params.id);
+      
+      if (!fundraiser) {
+        return res.status(404).json({ success: false, message: 'Fundraiser not found' });
+      }
+
+      // Add investment details
+      const investments = db.investments?.filter(inv => inv.fundraiserId === fundraiser.id) || [];
+      const investorsCount = new Set(investments.map(inv => inv.investorEmail)).size;
+      const raisedAmount = investments.reduce((sum, inv) => sum + inv.amount, 0);
+
+      res.json({
+        success: true,
+        fundraiser: {
+          ...fundraiser,
+          investorsCount,
+          raisedAmount: Math.min(raisedAmount, fundraiser.targetAmount),
+          investments
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching fundraiser:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch fundraiser' });
+    }
+  });
+
+  // Create investment (alumni only)
+  app.post('/api/fundraisers/:id/invest', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const user = db.users.find(u => u.id === req.user.userId);
+      
+      if (!user || user.accountType !== 'alumni') {
+        return res.status(403).json({ success: false, message: 'Only alumni can invest in fundraisers' });
+      }
+
+      const fundraiser = db.fundraisers?.find(f => f.id === req.params.id);
+      if (!fundraiser) {
+        return res.status(404).json({ success: false, message: 'Fundraiser not found' });
+      }
+
+      if (fundraiser.status !== 'active') {
+        return res.status(400).json({ success: false, message: 'Cannot invest in inactive fundraiser' });
+      }
+
+      const { amount, message } = req.body;
+      const investmentAmount = parseFloat(amount);
+
+      if (investmentAmount <= 0) {
+        return res.status(400).json({ success: false, message: 'Investment amount must be positive' });
+      }
+
+      // Check if total would exceed target
+      const currentInvestments = db.investments?.filter(inv => inv.fundraiserId === fundraiser.id) || [];
+      const currentRaised = currentInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+      
+      if (currentRaised + investmentAmount > fundraiser.targetAmount) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Investment would exceed target. Maximum available: ₹${fundraiser.targetAmount - currentRaised}` 
+        });
+      }
+
+      const investment = {
+        id: Date.now().toString(),
+        fundraiserId: fundraiser.id,
+        investorName: `${user.firstName} ${user.lastName}`,
+        investorEmail: user.email,
+        amount: investmentAmount,
+        message: message || '',
+        createdAt: new Date().toISOString(),
+        status: 'confirmed'
+      };
+
+      db.investments = db.investments || [];
+      db.investments.push(investment);
+
+      // Check if fundraiser is now fully funded
+      const newTotalRaised = currentRaised + investmentAmount;
+      if (newTotalRaised >= fundraiser.targetAmount) {
+        fundraiser.status = 'completed';
+      }
+
+      await writeDB(db);
+
+      res.json({
+        success: true,
+        message: 'Investment successful',
+        investment
+      });
+    } catch (error) {
+      console.error('Error creating investment:', error);
+      res.status(500).json({ success: false, message: 'Failed to create investment' });
+    }
+  });
+
+  // Get user's investments (alumni only)
+  app.get('/api/my-investments', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const user = db.users.find(u => u.id === req.user.userId);
+      
+      if (!user || user.accountType !== 'alumni') {
+        return res.status(403).json({ success: false, message: 'Only alumni can view investments' });
+      }
+
+      const investments = db.investments?.filter(inv => inv.investorEmail === user.email) || [];
+      
+      // Add fundraiser details to each investment
+      const investmentsWithDetails = investments.map(investment => {
+        const fundraiser = db.fundraisers?.find(f => f.id === investment.fundraiserId);
+        return {
+          ...investment,
+          fundraiserTitle: fundraiser?.title || 'Unknown',
+          fundraiserStatus: fundraiser?.status || 'unknown'
+        };
+      });
+
+      res.json({
+        success: true,
+        investments: investmentsWithDetails
+      });
+    } catch (error) {
+      console.error('Error fetching investments:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch investments' });
+    }
+  });
+
+  // Get user's fundraisers (students only)
+  app.get('/api/my-fundraisers', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const user = db.users.find(u => u.id === req.user.userId);
+      
+      if (!user || user.accountType !== 'student') {
+        return res.status(403).json({ success: false, message: 'Only students can view their fundraisers' });
+      }
+
+      const fundraisers = db.fundraisers?.filter(f => f.studentEmail === user.email) || [];
+      
+      // Add investment details
+      const fundraisersWithDetails = fundraisers.map(fundraiser => {
+        const investments = db.investments?.filter(inv => inv.fundraiserId === fundraiser.id) || [];
+        const investorsCount = new Set(investments.map(inv => inv.investorEmail)).size;
+        const raisedAmount = investments.reduce((sum, inv) => sum + inv.amount, 0);
+        
+        return {
+          ...fundraiser,
+          investorsCount,
+          raisedAmount: Math.min(raisedAmount, fundraiser.targetAmount),
+          investments
+        };
+      });
+
+      res.json({
+        success: true,
+        fundraisers: fundraisersWithDetails
+      });
+    } catch (error) {
+      console.error('Error fetching user fundraisers:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch user fundraisers' });
     }
   });
 

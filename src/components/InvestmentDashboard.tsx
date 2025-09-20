@@ -37,6 +37,7 @@ export const InvestmentDashboard = ({ fundraiser }: InvestmentDashboardProps) =>
   const [investmentType, setInvestmentType] = useState('');
   const [investmentNote, setInvestmentNote] = useState('');
   const [showInvestDialog, setShowInvestDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { 
@@ -49,25 +50,88 @@ export const InvestmentDashboard = ({ fundraiser }: InvestmentDashboardProps) =>
   const progressPercentage = (fundraiser.raisedAmount / fundraiser.targetAmount) * 100;
   const remainingAmount = fundraiser.targetAmount - fundraiser.raisedAmount;
 
-  const handleInvestment = () => {
-    if (!investmentAmount || !investmentType) {
+  const handleInvestment = async () => {
+    if (!investmentAmount) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please enter an investment amount.",
         variant: "destructive"
       });
       return;
     }
 
-    toast({
-      title: "Investment Submitted!",
-      description: `Your ${investmentType} investment of ${formatCurrency(Number(investmentAmount))} has been submitted for review.`,
-    });
+    const amount = Number(investmentAmount);
+    if (amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Investment amount must be positive.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setShowInvestDialog(false);
-    setInvestmentAmount('');
-    setInvestmentType('');
-    setInvestmentNote('');
+    if (amount > remainingAmount) {
+      toast({
+        title: "Amount Too Large",
+        description: `Investment cannot exceed remaining target: ${formatCurrency(remainingAmount)}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "Please login to invest.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/fundraisers/${fundraiser.id}/invest`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount,
+          message: investmentNote,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        toast({
+          title: "Investment Successful!",
+          description: `Your investment of ${formatCurrency(amount)} has been confirmed.`,
+        });
+        
+        setShowInvestDialog(false);
+        setInvestmentAmount('');
+        setInvestmentType('');
+        setInvestmentNote('');
+        
+        // Refresh the page or update the fundraiser data
+        window.location.reload();
+      } else {
+        throw new Error(data.message || 'Failed to process investment');
+      }
+    } catch (error) {
+      console.error('Error processing investment:', error);
+      toast({
+        title: "Investment Failed",
+        description: error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const mockInvestmentHistory = [
@@ -209,11 +273,11 @@ export const InvestmentDashboard = ({ fundraiser }: InvestmentDashboardProps) =>
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setShowInvestDialog(false)}>
+                    <Button variant="outline" onClick={() => setShowInvestDialog(false)} disabled={isSubmitting}>
                       Cancel
                     </Button>
-                    <Button onClick={handleInvestment} className="flex-1">
-                      Submit Investment
+                    <Button onClick={handleInvestment} className="flex-1" disabled={isSubmitting}>
+                      {isSubmitting ? 'Processing Investment...' : 'Submit Investment'}
                     </Button>
                   </div>
                 </DialogContent>

@@ -1697,5 +1697,46 @@
       "isHelpful": false,
       "helpfulCount": 0
     }
+  ],
+  "helpfulMarks": [],
+  "fundraisers": [
+    {
+      "id": "1758389162812",
+      "title": "nbawdawdawdawd",
+      "description": "awdawdawdawdawdawdawdawdwawd",
+      "studentName": "Danish Verma",
+      "studentEmail": "24BCY70069@cuchd.in",
+      "category": "FinTech",
+      "targetAmount": 3040400,
+      "raisedAmount": 0,
+      "fundingGoal": "awddawdawdawdad",
+      "businessModel": "awdawdawdawdawdawd",
+      "marketSize": "awdawdaw",
+      "competition": "awdawdawdawdawd",
+      "teamSize": 4,
+      "timeline": "18 months",
+      "riskAssessment": "awdawdawdawdawd",
+      "investorsCount": 0,
+      "createdAt": "2025-09-20T17:26:02.812Z",
+      "status": "active",
+      "tags": [
+        "B2G",
+        "AI/ML",
+        "Blockchain",
+        "awdawd"
+      ]
+    }
+  ],
+  "investments": [
+    {
+      "id": "1758389247438",
+      "fundraiserId": "1758389162812",
+      "investorName": "Danish Verma",
+      "investorEmail": "iamdanishverma@gmail.com",
+      "amount": 200000,
+      "message": "",
+      "createdAt": "2025-09-20T17:27:27.439Z",
+      "status": "confirmed"
+    }
   ]
 }
