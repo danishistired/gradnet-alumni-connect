@@ -178,7 +178,7 @@ const Index = () => {
                   </Button>
                 </GlassSurface>
                 <GlassSurface 
-                  width={300} 
+                  width={250} 
                   height={60}
                   borderRadius={24}
                   displace={15}
@@ -195,32 +195,12 @@ const Index = () => {
                     className="text-lg px-8 py-3 text-white w-full h-full bg-transparent border-none hover:bg-transparent"
                     onClick={() => navigate('/cu-questions')}
                   >
-                    Ask Questions to CU Community
+                    Visit CU Community
                   </Button>
                 </GlassSurface>
               </>
             )}
-            <GlassSurface 
-              width={180} 
-              height={60}
-              borderRadius={24}
-              displace={15}
-              distortionScale={-150}
-              redOffset={5}
-              greenOffset={15}
-              blueOffset={25}
-              brightness={60}
-              opacity={0.8}
-              mixBlendMode="screen"
-            >
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-3 text-white w-full h-full bg-transparent border-none hover:bg-transparent"
-                onClick={() => navigate('/about')}
-              >
-                Learn More
-              </Button>
-            </GlassSurface>
+            
           </div>
         </div>
 

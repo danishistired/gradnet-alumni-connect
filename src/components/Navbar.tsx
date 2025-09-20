@@ -1,5 +1,4 @@
 import { Logo } from "./Logo";
-import { LanguageSelector } from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -129,9 +128,6 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            
-            {/* Language Selector */}
-            <LanguageSelector />
             
             {/* Sign Up/Login buttons for non-authenticated users */}
             {!user && (
