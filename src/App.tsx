@@ -35,6 +35,9 @@ import { FundraiserPortal } from "./pages/FundraiserPortal";
 import { InterviewSessions } from "./pages/InterviewSessions";
 import { CounsellingSessions } from "./pages/CounsellingSessions";
 import { QuestioningSessions } from "./pages/QuestioningSessions";
+import { AlumniManageInterviews } from "./pages/AlumniManageInterviews";
+import { AlumniManageCounselling } from "./pages/AlumniManageCounselling";
+import { AlumniManageQuestions } from "./pages/AlumniManageQuestions";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
@@ -264,6 +267,43 @@ const App = () => {
                         } />
                         
                         {/* Alumni-specific routes */}
+                        <Route path="/alumni/manage-interviews" element={
+                          <AlumniRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <AlumniManageInterviews />
+                                </div>
+                              </div>
+                            </div>
+                          </AlumniRoute>
+                        } />
+                        <Route path="/alumni/manage-counselling" element={
+                          <AlumniRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <AlumniManageCounselling />
+                                </div>
+                              </div>
+                            </div>
+                          </AlumniRoute>
+                        } />
+                        <Route path="/alumni/manage-questions" element={
+                          <AlumniRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <AlumniManageQuestions />
+                                </div>
+                              </div>
+                            </div>
+                          </AlumniRoute>
+                        } />
+                        
                         <Route path="/dashboard" element={
                           <AlumniRoute>
                             <div className="relative w-full min-h-screen">

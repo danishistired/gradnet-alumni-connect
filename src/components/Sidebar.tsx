@@ -88,6 +88,13 @@ export const Sidebar = () => {
     { icon: QuestionIcon, label: 'Questioning Sessions', path: '/career-sessions/questions' },
   ] : [];
 
+  // Career Session Management for alumni only
+  const alumniSessionItems = user?.accountType === 'alumni' ? [
+    { icon: Video, label: 'Manage Interviews', path: '/alumni/manage-interviews' },
+    { icon: MessageCircle, label: 'Manage Counselling', path: '/alumni/manage-counselling' },
+    { icon: QuestionIcon, label: 'Manage Questions', path: '/alumni/manage-questions' },
+  ] : [];
+
   // Show top communities and joined ones
   const displayedCommunities = showAllCommunities 
     ? communities 
@@ -131,6 +138,36 @@ export const Sidebar = () => {
             </h3>
             <nav className="space-y-1">
               {careerSessionItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                    isActive(item.path)
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground hover:bg-accent/50 hover:text-accent-foreground"
+                  )}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </>
+      )}
+
+      {/* Career Session Management - Alumni Only */}
+      {user?.accountType === 'alumni' && alumniSessionItems.length > 0 && (
+        <>
+          <Separator />
+          <div className="p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+              <Briefcase className="w-3 h-3" />
+              Session Management
+            </h3>
+            <nav className="space-y-1">
+              {alumniSessionItems.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
