@@ -9,7 +9,17 @@ interface CreditsData {
 export const useCredits = () => {
   const [credits, setCredits] = useState<CreditsData>({ creditPoints: 0, freeInterviews: 0 });
   const [loading, setLoading] = useState(true);
-  const { user, token } = useAuth();
+  const { user, token, updateUserCredits } = useAuth();
+
+  // Initialize credits from user object if available
+  useEffect(() => {
+    if (user && user.creditPoints !== undefined) {
+      setCredits({
+        creditPoints: user.creditPoints || 0,
+        freeInterviews: user.freeInterviews || 0,
+      });
+    }
+  }, [user]);
 
   const fetchCredits = useCallback(async () => {
     if (!user || !token) {
@@ -26,17 +36,20 @@ export const useCredits = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCredits({
+        const creditsData = {
           creditPoints: data.creditPoints || 0,
           freeInterviews: data.freeInterviews || 0,
-        });
+        };
+        setCredits(creditsData);
+        // Sync with AuthContext
+        updateUserCredits(creditsData.creditPoints, creditsData.freeInterviews);
       }
     } catch (error) {
       console.error('Error fetching credits:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, token]);
+  }, [user, token, updateUserCredits]);
 
   const deductCredits = async (amount: number, type: 'interview' | 'general' = 'general') => {
     if (!token) return false;
@@ -53,10 +66,13 @@ export const useCredits = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCredits({
+        const creditsData = {
           creditPoints: data.creditPoints,
           freeInterviews: data.freeInterviews,
-        });
+        };
+        setCredits(creditsData);
+        // Sync with AuthContext
+        updateUserCredits(creditsData.creditPoints, creditsData.freeInterviews);
         return true;
       }
       return false;
@@ -81,10 +97,13 @@ export const useCredits = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCredits({
+        const creditsData = {
           creditPoints: data.creditPoints,
           freeInterviews: data.freeInterviews,
-        });
+        };
+        setCredits(creditsData);
+        // Sync with AuthContext
+        updateUserCredits(creditsData.creditPoints, creditsData.freeInterviews);
         return true;
       }
       return false;

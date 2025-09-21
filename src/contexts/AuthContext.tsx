@@ -35,6 +35,7 @@ interface AuthContextType {
   setAuthState: (user: User, token: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>; // Add refresh function
+  updateUserCredits: (creditPoints: number, freeInterviews: number) => void; // Add credit update function
   isLoading: boolean;
 }
 
@@ -62,6 +63,7 @@ export const useAuth = () => {
       setAuthState: () => {},
       logout: () => {},
       refreshUser: async () => {},
+      updateUserCredits: () => {},
       isLoading: true
     };
   }
@@ -203,6 +205,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem('token', token);
   };
 
+  const updateUserCredits = (creditPoints: number, freeInterviews: number) => {
+    if (user) {
+      setUser({ ...user, creditPoints, freeInterviews });
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -211,6 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState,
     logout,
     refreshUser,
+    updateUserCredits,
     isLoading,
   };
 

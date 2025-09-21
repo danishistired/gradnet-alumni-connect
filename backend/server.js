@@ -428,7 +428,12 @@ app.post('/api/login', async (req, res) => {
         currentSchool: user.currentSchool || '',
         interestedProgram: user.interestedProgram || '',
         profilePicture: user.profilePicture || null,
-        isApproved: user.accountType === 'alumni' ? user.isApproved : true
+        isApproved: user.accountType === 'alumni' ? user.isApproved : true,
+        creditPoints: user.creditPoints || 0,
+        freeInterviews: user.freeInterviews || 0,
+        referralCode: user.referralCode,
+        referredBy: user.referredBy,
+        referralCount: user.referralCount || 0
       }
     });
 
@@ -1321,7 +1326,12 @@ app.get('/api/verify', authenticateToken, async (req, res) => {
         university: user.university,
         graduationYear: user.graduationYear,
         profilePicture: user.profilePicture || null,
-        isApproved: user.accountType === 'alumni' ? user.isApproved : true
+        isApproved: user.accountType === 'alumni' ? user.isApproved : true,
+        creditPoints: user.creditPoints || 0,
+        freeInterviews: user.freeInterviews || 0,
+        referralCode: user.referralCode,
+        referredBy: user.referredBy,
+        referralCount: user.referralCount || 0
       }
     });
 

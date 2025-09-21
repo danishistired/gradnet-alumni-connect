@@ -462,8 +462,8 @@
       "github": "",
       "website": "",
       "location": "",
-      "creditPoints": 20,
-      "freeInterviews": 2,
+      "creditPoints": 0,
+      "freeInterviews": 0,
       "referralCode": "O9AC7NNE-s",
       "referredBy": null,
       "referralCount": 1,
@@ -474,7 +474,7 @@
         "endDate": null
       },
       "createdAt": "2025-09-21T06:31:57.002Z",
-      "updatedAt": "2025-09-21T06:50:51.660Z"
+      "updatedAt": "2025-09-21T08:42:32.505Z"
     },
     {
       "id": "1758437451613",
@@ -1953,6 +1953,17 @@
       "askedById": "1754890245092",
       "createdAt": "2025-08-12T07:53:47.224Z",
       "isResolved": false
+    },
+    {
+      "id": "1758444446640",
+      "alumniId": "1758363659065",
+      "studentId": "1758436317002",
+      "question": "anktiowoit",
+      "category": "Technical Skills",
+      "priority": "medium",
+      "status": "pending",
+      "credits": 1,
+      "askedAt": "2025-09-21T08:47:26.640Z"
     }
   ],
   "answers": [

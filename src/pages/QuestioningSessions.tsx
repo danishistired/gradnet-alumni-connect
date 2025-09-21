@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCredits } from '@/hooks/useCredits';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +70,7 @@ interface Question {
 
 export const QuestioningSessions = () => {
   const { user } = useAuth();
+  const { credits, deductCredits, fetchCredits } = useCredits();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,10 +151,12 @@ export const QuestioningSessions = () => {
 
     const cost = priorityOptions.find(p => p.value === questionPriority)?.cost || 1;
 
-    if (!user?.creditPoints || user.creditPoints < cost) {
+    // Check if user has enough credits (can use free interviews OR regular credits)
+    const canAfford = credits.freeInterviews > 0 || credits.creditPoints >= cost;
+    if (!canAfford) {
       toast({
         title: "Insufficient Credits",
-        description: `You need ${cost} credit${cost > 1 ? 's' : ''} to ask this question.`,
+        description: `You need ${cost} credit${cost > 1 ? 's' : ''} or a free interview session to ask this question.`,
         variant: "destructive"
       });
       return;
@@ -257,7 +261,8 @@ export const QuestioningSessions = () => {
           </Badge>
           <Badge variant="secondary" className="flex items-center gap-2">
             <CreditCard className="w-4 h-4" />
-            Your Credits: {user?.creditPoints || 0}
+            Your Credits: {credits.creditPoints || 0}
+            {credits.freeInterviews > 0 && ` + ${credits.freeInterviews} Free`}
           </Badge>
         </div>
       </div>
@@ -366,7 +371,7 @@ export const QuestioningSessions = () => {
                     <Button 
                       className="w-full" 
                       onClick={() => setSelectedAlumni(alumnus)}
-                      disabled={!user?.creditPoints || user.creditPoints < QUESTION_COST}
+                      disabled={!(credits.freeInterviews > 0 || credits.creditPoints >= QUESTION_COST)}
                     >
                       <HelpCircle className="w-4 h-4 mr-2" />
                       Ask Question

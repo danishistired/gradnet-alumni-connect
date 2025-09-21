@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCredits } from '@/hooks/useCredits';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,6 +75,7 @@ interface CounsellingSession {
 
 export const CounsellingSessions = () => {
   const { user } = useAuth();
+  const { credits, deductCredits, fetchCredits } = useCredits();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -142,10 +144,12 @@ export const CounsellingSessions = () => {
       return;
     }
 
-    if (!user?.creditPoints || user.creditPoints < COUNSELLING_COST) {
+    // Check if user has enough credits (can use free interviews OR regular credits)
+    const canAfford = credits.freeInterviews > 0 || credits.creditPoints >= COUNSELLING_COST;
+    if (!canAfford) {
       toast({
         title: "Insufficient Credits",
-        description: `You need ${COUNSELLING_COST} credits to book a counselling session.`,
+        description: `You need ${COUNSELLING_COST} credits or a free interview session to book.`,
         variant: "destructive"
       });
       return;
@@ -251,7 +255,8 @@ export const CounsellingSessions = () => {
           </Badge>
           <Badge variant="secondary" className="flex items-center gap-2">
             <CreditCard className="w-4 h-4" />
-            Your Credits: {user?.creditPoints || 0}
+            Your Credits: {credits.creditPoints || 0}
+            {credits.freeInterviews > 0 && ` + ${credits.freeInterviews} Free`}
           </Badge>
         </div>
       </div>
@@ -354,7 +359,7 @@ export const CounsellingSessions = () => {
                     <Button 
                       className="w-full" 
                       onClick={() => setSelectedAlumni(alumnus)}
-                      disabled={!user?.creditPoints || user.creditPoints < COUNSELLING_COST}
+                      disabled={!(credits.freeInterviews > 0 || credits.creditPoints >= COUNSELLING_COST)}
                     >
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Book Session
