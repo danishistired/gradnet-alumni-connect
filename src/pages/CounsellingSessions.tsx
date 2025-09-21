@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -236,6 +237,7 @@ export const CounsellingSessions = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <Navbar />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Counselling Sessions</h1>
