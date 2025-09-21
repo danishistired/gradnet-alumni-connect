@@ -12,13 +12,26 @@ interface User {
   interestedProgram?: string;
   profilePicture?: string;
   isApproved?: boolean; // For alumni approval status
+  // Credit system fields
+  creditPoints?: number;
+  freeInterviews?: number;
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
+  // Subscription (students only)
+  subscription?: {
+    plan: 'basic' | 'pro' | 'pro+';
+    status: 'active' | 'inactive' | 'cancelled';
+    startDate: string;
+    endDate?: string;
+  };
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string, accountType: 'student' | 'alumni' | 'prospective') => Promise<{ success: boolean; message: string }>;
-  register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; message: string; user?: User }>;
   setAuthState: (user: User, token: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>; // Add refresh function
@@ -147,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem('token', data.token);
-        return { success: true, message: data.message };
+        return { success: true, message: data.message, user: data.user };
       } else {
         return { success: false, message: data.message };
       }

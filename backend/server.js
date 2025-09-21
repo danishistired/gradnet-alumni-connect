@@ -84,6 +84,26 @@ function isValidEmail(email, accountType) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Generate unique referral code with account type prefix
+function generateReferralCode(accountType) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) { // Reduced to 6 chars to make room for prefix
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  // Add prefix based on account type
+  const prefix = accountType === 'student' ? '-s' : '-a';
+  return result + prefix;
+}
+
+// Extract account type from referral code prefix
+function getAccountTypeFromReferralCode(referralCode) {
+  if (referralCode.endsWith('-s')) return 'student';
+  if (referralCode.endsWith('-a')) return 'alumni';
+  return null; // For legacy codes without prefix
+}
+
 // Middleware to authenticate JWT token
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -174,6 +194,19 @@ app.post('/api/register', async (req, res) => {
       github: '',
       website: '',
       location: '',
+      // Credit system fields
+      creditPoints: accountType === 'student' ? 10 : 0, // Students get 10 free credits
+      freeInterviews: accountType === 'student' ? 1 : 0, // Students get 1 free interview
+      referralCode: generateReferralCode(accountType),
+      referredBy: null,
+      referralCount: 0,
+      // Subscription (students only)
+      subscription: accountType === 'student' ? {
+        plan: 'basic',
+        status: 'active',
+        startDate: new Date().toISOString(),
+        endDate: null
+      } : null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       // Set isApproved to false for alumni, true for others
@@ -2427,6 +2460,221 @@ initializeDB().then(async () => {
     }
   });
 
+  // Career Sessions APIs
+  // Get all alumni for career sessions
+  app.get('/api/users/alumni', async (req, res) => {
+    try {
+      const db = await readDB();
+      const alumni = db.users.filter(user => user.accountType === 'alumni').map(user => ({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        company: user.company || '',
+        jobTitle: user.jobTitle || '',
+        skills: user.skills || [],
+        university: user.university,
+        graduationYear: user.graduationYear,
+        location: user.location || '',
+        profilePicture: user.profilePicture,
+        rating: Math.random() * 5, // Mock rating for now
+        totalInterviews: Math.floor(Math.random() * 50),
+        totalCounselling: Math.floor(Math.random() * 30),
+        totalQuestions: Math.floor(Math.random() * 100),
+        responseRate: Math.floor(Math.random() * 40) + 60, // 60-100%
+        avgResponseTime: ['2 hours', '4 hours', '1 day', '2 days'][Math.floor(Math.random() * 4)]
+      }));
+      
+      res.json({ success: true, alumni });
+    } catch (error) {
+      console.error('Error fetching alumni:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch alumni' });
+    }
+  });
+
+  // Interview Sessions APIs
+  app.post('/api/career-sessions/interviews/book', authenticateToken, async (req, res) => {
+    try {
+      const { alumniId, date, time, topic, notes, duration } = req.body;
+      const db = await readDB();
+      
+      const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      const user = db.users[userIndex];
+      if (user.accountType !== 'student') {
+        return res.status(403).json({ success: false, message: 'Only students can book interview sessions' });
+      }
+      
+      const INTERVIEW_COST = 30;
+      if (user.creditPoints < INTERVIEW_COST) {
+        return res.status(400).json({ success: false, message: 'Insufficient credits' });
+      }
+      
+      // Deduct credits
+      user.creditPoints -= INTERVIEW_COST;
+      
+      // Create interview session
+      const session = {
+        id: Date.now().toString(),
+        alumniId,
+        studentId: user.id,
+        date,
+        time,
+        duration: duration || 60,
+        status: 'pending',
+        topic,
+        notes,
+        createdAt: new Date().toISOString()
+      };
+      
+      if (!db.interviewSessions) db.interviewSessions = [];
+      db.interviewSessions.push(session);
+      
+      await writeDB(db);
+      
+      res.json({ success: true, session });
+    } catch (error) {
+      console.error('Error booking interview:', error);
+      res.status(500).json({ success: false, message: 'Failed to book interview session' });
+    }
+  });
+
+  app.get('/api/career-sessions/interviews/my-sessions', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const sessions = (db.interviewSessions || []).filter(session => session.studentId === req.user.userId);
+      res.json({ success: true, sessions });
+    } catch (error) {
+      console.error('Error fetching interview sessions:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch interview sessions' });
+    }
+  });
+
+  // Counselling Sessions APIs
+  app.post('/api/career-sessions/counselling/book', authenticateToken, async (req, res) => {
+    try {
+      const { alumniId, date, time, sessionType, topic, notes, duration } = req.body;
+      const db = await readDB();
+      
+      const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      const user = db.users[userIndex];
+      if (user.accountType !== 'student') {
+        return res.status(403).json({ success: false, message: 'Only students can book counselling sessions' });
+      }
+      
+      const COUNSELLING_COST = 50;
+      if (user.creditPoints < COUNSELLING_COST) {
+        return res.status(400).json({ success: false, message: 'Insufficient credits' });
+      }
+      
+      // Deduct credits
+      user.creditPoints -= COUNSELLING_COST;
+      
+      // Create counselling session
+      const session = {
+        id: Date.now().toString(),
+        alumniId,
+        studentId: user.id,
+        date,
+        time,
+        duration: duration || 60,
+        status: 'pending',
+        sessionType,
+        topic,
+        notes,
+        createdAt: new Date().toISOString()
+      };
+      
+      if (!db.counsellingSessions) db.counsellingSessions = [];
+      db.counsellingSessions.push(session);
+      
+      await writeDB(db);
+      
+      res.json({ success: true, session });
+    } catch (error) {
+      console.error('Error booking counselling session:', error);
+      res.status(500).json({ success: false, message: 'Failed to book counselling session' });
+    }
+  });
+
+  app.get('/api/career-sessions/counselling/my-sessions', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const sessions = (db.counsellingSessions || []).filter(session => session.studentId === req.user.userId);
+      res.json({ success: true, sessions });
+    } catch (error) {
+      console.error('Error fetching counselling sessions:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch counselling sessions' });
+    }
+  });
+
+  // Questioning Sessions APIs
+  app.post('/api/career-sessions/questions/ask', authenticateToken, async (req, res) => {
+    try {
+      const { alumniId, question, category, priority } = req.body;
+      const db = await readDB();
+      
+      const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+      if (userIndex === -1) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      const user = db.users[userIndex];
+      if (user.accountType !== 'student') {
+        return res.status(403).json({ success: false, message: 'Only students can ask questions' });
+      }
+      
+      const QUESTION_COST = priority === 'high' ? 2 : 1;
+      if (user.creditPoints < QUESTION_COST) {
+        return res.status(400).json({ success: false, message: 'Insufficient credits' });
+      }
+      
+      // Deduct credits
+      user.creditPoints -= QUESTION_COST;
+      
+      // Create question
+      const questionObj = {
+        id: Date.now().toString(),
+        alumniId,
+        studentId: user.id,
+        question,
+        category,
+        priority,
+        status: 'pending',
+        credits: QUESTION_COST,
+        askedAt: new Date().toISOString()
+      };
+      
+      if (!db.questions) db.questions = [];
+      db.questions.push(questionObj);
+      
+      await writeDB(db);
+      
+      res.json({ success: true, question: questionObj });
+    } catch (error) {
+      console.error('Error asking question:', error);
+      res.status(500).json({ success: false, message: 'Failed to ask question' });
+    }
+  });
+
+  app.get('/api/career-sessions/questions/my-questions', authenticateToken, async (req, res) => {
+    try {
+      const db = await readDB();
+      const questions = (db.questions || []).filter(question => question.studentId === req.user.userId);
+      res.json({ success: true, questions });
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      res.status(500).json({ success: false, message: 'Failed to fetch questions' });
+    }
+  });
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
@@ -2739,5 +2987,306 @@ app.get('/api/posts/trending', async (req, res) => {
   } catch (error) {
     console.error('Error fetching trending posts:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch trending posts' });
+  }
+});
+
+// Credit Management APIs
+app.get('/api/credits', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      creditPoints: user.creditPoints || 0,
+      freeInterviews: user.freeInterviews || 0
+    });
+  } catch (error) {
+    console.error('Error fetching credits:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch credits' });
+  }
+});
+
+app.post('/api/credits/deduct', authenticateToken, async (req, res) => {
+  try {
+    const { amount, type } = req.body; // type: 'interview' or 'general'
+    const db = await readDB();
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const user = db.users[userIndex];
+    
+    if (type === 'interview') {
+      // Check if user has free interviews first
+      if (user.freeInterviews > 0) {
+        user.freeInterviews -= 1;
+      } else if (user.creditPoints >= 20) {
+        user.creditPoints -= 20;
+      } else {
+        return res.status(400).json({ success: false, message: 'Insufficient credits for interview booking' });
+      }
+    } else {
+      if (user.creditPoints < amount) {
+        return res.status(400).json({ success: false, message: 'Insufficient credits' });
+      }
+      user.creditPoints -= amount;
+    }
+    
+    user.updatedAt = new Date().toISOString();
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      creditPoints: user.creditPoints,
+      freeInterviews: user.freeInterviews
+    });
+  } catch (error) {
+    console.error('Error deducting credits:', error);
+    res.status(500).json({ success: false, message: 'Failed to deduct credits' });
+  }
+});
+
+app.post('/api/credits/add', authenticateToken, async (req, res) => {
+  try {
+    const { amount, freeInterviews } = req.body;
+    const db = await readDB();
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const user = db.users[userIndex];
+    user.creditPoints = (user.creditPoints || 0) + (amount || 0);
+    user.freeInterviews = (user.freeInterviews || 0) + (freeInterviews || 0);
+    user.updatedAt = new Date().toISOString();
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      creditPoints: user.creditPoints,
+      freeInterviews: user.freeInterviews
+    });
+  } catch (error) {
+    console.error('Error adding credits:', error);
+    res.status(500).json({ success: false, message: 'Failed to add credits' });
+  }
+});
+
+// Referral System APIs
+app.get('/api/referrals/validate-code/:code/:accountType', async (req, res) => {
+  try {
+    const { code, accountType } = req.params;
+    const db = await readDB();
+    
+    // First check if the referral code prefix matches the account type
+    const codeAccountType = getAccountTypeFromReferralCode(code);
+    if (codeAccountType && codeAccountType !== accountType) {
+      const codeTypeText = codeAccountType === 'student' ? 'students' : 'alumni';
+      const userTypeText = accountType === 'student' ? 'Students' : 'Alumni';
+      return res.status(400).json({ 
+        success: false, 
+        message: `This referral code is for ${codeTypeText}. ${userTypeText} can only use referral codes ending in ${accountType === 'student' ? '-s' : '-a'}.`
+      });
+    }
+    
+    // Find referring user by referral code
+    const referringUser = db.users.find(u => u.referralCode === code);
+    if (!referringUser) {
+      return res.status(404).json({ success: false, message: 'Invalid referral code' });
+    }
+    
+    // Double-check account types match (for legacy codes and additional safety)
+    if (referringUser.accountType !== accountType) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `This referral code is from ${referringUser.accountType === 'student' ? 'a student' : 'an alumni'}. ${accountType === 'student' ? 'Students' : 'Alumni'} can only use referral codes from other ${accountType === 'student' ? 'students' : 'alumni'}.`
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Valid referral code',
+      referringUser: {
+        name: `${referringUser.firstName} ${referringUser.lastName}`,
+        accountType: referringUser.accountType,
+        university: referringUser.university
+      }
+    });
+  } catch (error) {
+    console.error('Error validating referral code:', error);
+    res.status(500).json({ success: false, message: 'Failed to validate referral code' });
+  }
+});
+
+app.post('/api/referrals/validate', async (req, res) => {
+  try {
+    const { referralCode, newUserId } = req.body;
+    const db = await readDB();
+    
+    // Find referring user by referral code
+    const referringUser = db.users.find(u => u.referralCode === referralCode);
+    if (!referringUser) {
+      return res.status(404).json({ success: false, message: 'Invalid referral code' });
+    }
+    
+    // Find new user
+    const newUserIndex = db.users.findIndex(u => u.id === newUserId);
+    if (newUserIndex === -1) {
+      return res.status(404).json({ success: false, message: 'New user not found' });
+    }
+    
+    const newUser = db.users[newUserIndex];
+    
+    // Prevent self-referral
+    if (referringUser.id === newUserId) {
+      return res.status(400).json({ success: false, message: 'Cannot refer yourself' });
+    }
+    
+    // Check if already referred
+    if (newUser.referredBy) {
+      return res.status(400).json({ success: false, message: 'User already referred by someone else' });
+    }
+    
+    // Prevent cross-account-type referrals
+    if (referringUser.accountType !== newUser.accountType) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `${referringUser.accountType === 'student' ? 'Students' : 'Alumni'} can only refer other ${referringUser.accountType === 'student' ? 'students' : 'alumni'}` 
+      });
+    }
+    
+    // Update new user with referral info
+    newUser.referredBy = referringUser.id;
+    
+    // Update referring user's referral count and rewards
+    const referringUserIndex = db.users.findIndex(u => u.id === referringUser.id);
+    const referUser = db.users[referringUserIndex];
+    referUser.referralCount = (referUser.referralCount || 0) + 1;
+    
+    // Reward logic
+    if (referringUser.accountType === 'alumni' && newUser.accountType === 'alumni') {
+      // Alumni referring alumni gets 50 credits
+      referUser.creditPoints = (referUser.creditPoints || 0) + 50;
+    } else if (referringUser.accountType === 'student' && newUser.accountType === 'student') {
+      // Student referring student
+      if (referUser.referralCount <= 3) {
+        // First 3 referrals: 10 credits + 1 free interview
+        referUser.creditPoints = (referUser.creditPoints || 0) + 10;
+        referUser.freeInterviews = (referUser.freeInterviews || 0) + 1;
+      } else {
+        // After 3 referrals: only 5 credits
+        referUser.creditPoints = (referUser.creditPoints || 0) + 5;
+      }
+    }
+    
+    referUser.updatedAt = new Date().toISOString();
+    newUser.updatedAt = new Date().toISOString();
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      message: 'Referral validated successfully',
+      reward: {
+        credits: referringUser.accountType === 'alumni' ? 50 : (referUser.referralCount <= 3 ? 10 : 5),
+        freeInterviews: referringUser.accountType === 'student' && referUser.referralCount <= 3 ? 1 : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error validating referral:', error);
+    res.status(500).json({ success: false, message: 'Failed to validate referral' });
+  }
+});
+
+app.get('/api/referrals/stats', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const referralCount = db.users.filter(u => u.referredBy === user.id).length;
+    
+    res.json({
+      success: true,
+      referralCode: user.referralCode,
+      referralCount,
+      referralLink: `${req.protocol}://${req.get('host')}/register?ref=${user.referralCode}`
+    });
+  } catch (error) {
+    console.error('Error fetching referral stats:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch referral stats' });
+  }
+});
+
+// Subscription Management APIs
+app.get('/api/subscription', authenticateToken, async (req, res) => {
+  try {
+    const db = await readDB();
+    const user = db.users.find(u => u.id === req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    res.json({
+      success: true,
+      subscription: user.subscription || {
+        plan: 'basic',
+        status: 'active',
+        startDate: new Date().toISOString(),
+        endDate: null
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch subscription' });
+  }
+});
+
+app.post('/api/subscription/upgrade', authenticateToken, async (req, res) => {
+  try {
+    const { plan } = req.body; // 'basic', 'pro', 'pro+'
+    const db = await readDB();
+    const userIndex = db.users.findIndex(u => u.id === req.user.userId);
+    
+    if (userIndex === -1) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    const user = db.users[userIndex];
+    
+    if (user.accountType !== 'student') {
+      return res.status(400).json({ success: false, message: 'Only students can have subscriptions' });
+    }
+    
+    user.subscription = {
+      plan,
+      status: 'active',
+      startDate: new Date().toISOString(),
+      endDate: null
+    };
+    user.updatedAt = new Date().toISOString();
+    
+    await writeDB(db);
+    
+    res.json({
+      success: true,
+      subscription: user.subscription
+    });
+  } catch (error) {
+    console.error('Error upgrading subscription:', error);
+    res.status(500).json({ success: false, message: 'Failed to upgrade subscription' });
   }
 });

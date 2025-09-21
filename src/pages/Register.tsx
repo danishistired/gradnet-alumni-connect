@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, GraduationCap, User, Upload, FileText } from "lucide-react";
+import { Eye, EyeOff, GraduationCap, UserIcon, Upload, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -14,6 +14,16 @@ import GlassSurface from '@/components/GlassSurface';
 import LightRays from '@/components/LightRays';
 
 export const Register = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // Get the page user was trying to access before registration
+  const from = location.state?.from?.pathname || '/skill-selection';
+  
+  // Check for referral code in URL
+  const urlReferralCode = searchParams.get('ref');
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -24,19 +34,30 @@ export const Register = () => {
     university: "",
     graduationYear: "",
     agreeToTerms: false,
-    proofDocument: null as File | null
+    proofDocument: null as File | null,
+    referralCode: urlReferralCode || "" // Pre-fill from URL if present
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [referralValidation, setReferralValidation] = useState<{
+    isValid?: boolean;
+    message?: string;
+    referringUser?: {
+      name: string;
+      accountType: string;
+      university: string;
+    };
+  }>({});
 
   const { register } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  // Get the page user was trying to access before registration
-  const from = location.state?.from?.pathname || '/skill-selection';
+  useEffect(() => {
+    if (urlReferralCode) {
+      console.log('Registration with referral code:', urlReferralCode);
+    }
+  }, [urlReferralCode]);
 
   const handleInputChange = (field: string, value: string | boolean | File | null) => {
     setFormData(prev => ({
@@ -52,6 +73,54 @@ export const Register = () => {
     // For alumni, any valid email format is allowed
     return email.includes('@') && email.includes('.');
   };
+
+  // Validate referral code if provided
+  const validateReferralCode = async (code: string, accountType: string) => {
+    if (!code.trim()) {
+      setReferralValidation({});
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/referrals/validate-code/${code}/${accountType}`,
+        { method: 'GET' }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReferralValidation({
+          isValid: true,
+          message: `Valid referral from ${data.user.firstName} ${data.user.lastName}`,
+          referringUser: data.user
+        });
+      } else {
+        const errorData = await response.json();
+        setReferralValidation({
+          isValid: false,
+          message: errorData.message || 'Invalid referral code'
+        });
+      }
+    } catch (error) {
+      setReferralValidation({
+        isValid: false,
+        message: 'Error validating referral code'
+      });
+    }
+  };
+
+  // Validate referral code when it changes
+  useEffect(() => {
+    if (formData.referralCode) {
+      const timeoutId = setTimeout(() => {
+        validateReferralCode(formData.referralCode, formData.accountType);
+      }, 500); // Debounce validation for 500ms
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setReferralValidation({});
+    }
+  }, [formData.referralCode, formData.accountType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,9 +168,36 @@ export const Register = () => {
         accountType: formData.accountType,
         university: formData.university,
         graduationYear: formData.graduationYear
-      });
+      }) as { success: boolean; message: string; user?: { id: string } };
       
       if (result.success) {
+        // If there's a referral code, validate it after successful registration
+        if (formData.referralCode) {
+          try {
+            const referralResponse = await fetch('/api/referrals/validate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                referralCode: formData.referralCode,
+                newUserId: result.user?.id // Assuming the register response includes user data
+              }),
+            });
+
+            if (referralResponse.ok) {
+              const referralData = await referralResponse.json();
+              console.log('Referral validated:', referralData);
+              // Could show a success message about referral rewards
+            } else {
+              console.warn('Referral validation failed, but registration succeeded');
+            }
+          } catch (referralError) {
+            console.error('Error validating referral:', referralError);
+            // Don't fail registration even if referral validation fails
+          }
+        }
+        
         // Redirect to skill selection by default for new users
         navigate(from, { replace: true });
       } else {
@@ -156,6 +252,15 @@ export const Register = () => {
               <div className="text-center mb-6">
                 <h1 className="text-3xl font-bold text-white mb-2">Join GradNet</h1>
                 <p className="text-white/70">Create your account and start connecting</p>
+                
+                {/* Referral Code Notice */}
+                {formData.referralCode && (
+                  <div className="mt-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+                    <p className="text-green-400 text-sm">
+                      🎉 You're registering with a referral code! You'll earn bonus rewards.
+                    </p>
+                  </div>
+                )}
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -182,7 +287,7 @@ export const Register = () => {
                       }`}
                       onClick={() => handleInputChange('accountType', 'alumni')}
                     >
-                      <User className="w-4 h-4" />
+                      <UserIcon className="w-4 h-4" />
                       <span className="text-sm">Alumni</span>
                     </Button>
                   </div>
@@ -281,6 +386,32 @@ export const Register = () => {
                     className="bg-transparent border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
                     required
                   />
+                </div>
+
+                {/* Referral Code Field */}
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    placeholder="Referral Code (Optional)"
+                    value={formData.referralCode}
+                    onChange={(e) => handleInputChange("referralCode", e.target.value.toUpperCase())}
+                    className="bg-transparent border-white/30 text-white placeholder:text-white/60 focus:border-white/50"
+                  />
+                  {/* Referral Validation Message */}
+                  {referralValidation.message && (
+                    <div className={`text-sm p-2 rounded ${
+                      referralValidation.isValid 
+                        ? 'text-green-400 bg-green-500/20 border border-green-500/30' 
+                        : 'text-red-400 bg-red-500/20 border border-red-500/30'
+                    }`}>
+                      {referralValidation.message}
+                      {referralValidation.isValid && referralValidation.referringUser && (
+                        <div className="text-xs mt-1 text-green-300">
+                          University: {referralValidation.referringUser.university}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Terms Checkbox */}

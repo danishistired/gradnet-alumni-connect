@@ -21,6 +21,8 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import ModerationDemo from "./pages/ModerationDemo";
 import Dashboard from "./pages/Dashboard";
+import Subscription from "./pages/Subscription";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 import { Trending } from "./pages/Trending";
 import { CommunityPage } from "./pages/CommunityPage";
@@ -30,6 +32,9 @@ import { ProspectiveQuestions } from "./pages/ProspectiveQuestions";
 import { ProspectiveLogin } from "./pages/ProspectiveLogin";
 import { CUCommunity } from "./pages/CUCommunity";
 import { FundraiserPortal } from "./pages/FundraiserPortal";
+import { InterviewSessions } from "./pages/InterviewSessions";
+import { CounsellingSessions } from "./pages/CounsellingSessions";
+import { QuestioningSessions } from "./pages/QuestioningSessions";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BlogProvider } from "@/contexts/BlogContext";
 import { FollowProvider } from "@/contexts/FollowContext";
@@ -208,6 +213,54 @@ const App = () => {
                           <StudentAlumniRoute>
                             <SkillSelection />
                           </StudentAlumniRoute>
+                        } />
+                        <Route path="/subscription" element={
+                          <StudentRoute>
+                            <Subscription />
+                          </StudentRoute>
+                        } />
+                        <Route path="/payment" element={
+                          <StudentRoute>
+                            <Payment />
+                          </StudentRoute>
+                        } />
+                        
+                        {/* Career Sessions - Students only */}
+                        <Route path="/career-sessions/interviews" element={
+                          <StudentRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <InterviewSessions />
+                                </div>
+                              </div>
+                            </div>
+                          </StudentRoute>
+                        } />
+                        <Route path="/career-sessions/counselling" element={
+                          <StudentRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <CounsellingSessions />
+                                </div>
+                              </div>
+                            </div>
+                          </StudentRoute>
+                        } />
+                        <Route path="/career-sessions/questions" element={
+                          <StudentRoute>
+                            <div className="relative w-full min-h-screen">
+                              <Sidebar />
+                              <div className="w-full overflow-auto flex justify-center">
+                                <div className="w-full max-w-7xl">
+                                  <QuestioningSessions />
+                                </div>
+                              </div>
+                            </div>
+                          </StudentRoute>
                         } />
                         
                         {/* Alumni-specific routes */}

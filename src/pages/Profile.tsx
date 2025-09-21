@@ -34,6 +34,8 @@ import {
   MessageSquare
 } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { ReferralBar } from "@/components/ReferralBar";
+import { SubscriptionBar } from "@/components/SubscriptionBar";
 
 interface UserProfile {
   id: string;
@@ -642,6 +644,17 @@ const Profile = () => {
         />
           </div>
         </div>
+        
+        {/* Referral and Subscription Bars - only show on own profile */}
+        {isOwnProfile && (
+          <div className="max-w-4xl mx-auto px-4 space-y-4 mb-8">
+            {/* Referral Bar - for all users */}
+            <ReferralBar />
+            
+            {/* Subscription Bar - only for students */}
+            <SubscriptionBar />
+          </div>
+        )}
         
         {/* Footer */}
         <Footer />

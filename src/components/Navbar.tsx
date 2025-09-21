@@ -6,12 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut, BarChart3 } from "lucide-react";
+import { User, Plus, Home, Users, Mail, Bell, Search, Menu, Settings, LogOut, BarChart3, Coins, Share, Copy } from "lucide-react";
 import { useLocation, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
+import { useReferral } from "@/hooks/useReferral";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useTranslation } from 'react-i18next';
+import { useToast } from "@/hooks/use-toast";
 
 
 interface NavbarProps {
@@ -22,6 +25,9 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isLoading } = useAuth();
+  const { credits } = useCredits();
+  const { referralData } = useReferral();
+  const { toast } = useToast();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -99,6 +105,26 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
     navigate("/");
   };
 
+  const copyReferralCode = async () => {
+    if (!referralData?.referralCode) return;
+    
+    try {
+      await navigator.clipboard.writeText(referralData.referralCode);
+      toast({
+        title: "Copied!",
+        description: "Referral code copied to clipboard",
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy referral code",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
@@ -108,7 +134,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
       <div className="w-full px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           
-          {/* Left Section: Logo + Search */}
+          {/* Left Section: Logo + Credits + Search */}
           <div className="flex items-center gap-4 flex-shrink-0">
             <Link to="/" className="flex-shrink-0">
               <img 
@@ -117,6 +143,24 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                 className="h-12 w-auto" 
               />
             </Link>
+            
+            {/* Credits Display - only show for authenticated users */}
+            {user && (
+              <div className="flex items-center gap-2 bg-surface-muted rounded-lg px-3 py-2 border border-border">
+                <Coins className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium text-text-primary">
+                  {credits.creditPoints}
+                </span>
+                {credits.freeInterviews > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <span className="text-xs text-green-500 font-medium">
+                      {credits.freeInterviews} Free
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
             
             {/* Search Bar - only show for authenticated users */}
             {user && (
@@ -263,7 +307,7 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="mr-2 h-4 w-4" />
                       Profile
@@ -274,6 +318,23 @@ export const Navbar = ({ onMessagesClick }: NavbarProps) => {
                         Dashboard
                       </DropdownMenuItem>
                     )}
+                    
+                    {/* Referral Code Display */}
+                    {referralData?.referralCode && (
+                      <DropdownMenuItem onClick={copyReferralCode}>
+                        <Share className="mr-2 h-4 w-4" />
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-sm">Referral Code</span>
+                          <div className="flex items-center gap-1">
+                            <code className="text-xs bg-accent/20 px-1 rounded">
+                              {referralData.referralCode}
+                            </code>
+                            <Copy className="h-3 w-3" />
+                          </div>
+                        </div>
+                      </DropdownMenuItem>
+                    )}
+                    
                     <DropdownMenuItem onClick={() => navigate("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
                       {t('nav.settings')}
